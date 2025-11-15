@@ -1,0 +1,92 @@
+#include "transactionservice.h"
+#include "entities/transaction.h"
+
+TransactionService::TransactionService() {
+    m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
+}
+void TransactionService::getAllTransactions(QTextBrowser* browser, QTableWidget *table)const{
+    std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
+    if(table != nullptr){
+        table->setColumnCount(5);
+        table->setHorizontalHeaderLabels({"id", "Date", "Amount", "Id account", "Id account To"});
+        table->setRowCount(res.size());
+    }
+    if(browser != nullptr)
+        browser->append("id   Date   Amount   Id account   Id account To\n");
+    for(size_t i = 0;i < res.size(); ++i){
+        const auto ent = res[i];
+        Transaction* transact = dynamic_cast<Transaction*>(ent.get());
+        if(transact){
+            qDebug() << *transact;
+            if(browser != nullptr)
+                browser << *transact;
+            if(table != nullptr){
+                table->setItem(i, 0, new QTableWidgetItem(QString::number(transact->getId())));
+                table->item(i,0)->setFlags(table->item(i,0)->flags() & ~Qt::ItemIsEditable);
+                table->setItem(i, 1, new QTableWidgetItem(transact->getDate().toString()));
+                table->setItem(i, 2, new QTableWidgetItem(QString::number(transact->getAmount())));
+                table->setItem(i, 3, new QTableWidgetItem(QString::number(transact->getIdAccount())));
+                table->setItem(i, 4, new QTableWidgetItem(QString::number(transact->getIdAccountTo())));
+            }
+        }
+    }
+}
+void TransactionService::insertTransaction(QDate date, double amount,
+                                           int id_account, int id_accountTo){
+    std::shared_ptr<Transaction> tran = std::make_shared<Transaction>();
+    std::vector<std::shared_ptr<Entity>> accounts = m_account_repo->getAll();
+
+    // check id
+    bool isAccount = isPresent<Account>(id_account, [&](){return m_account_repo->getAll();});
+    bool isAccountTo = isPresent<Account>(id_accountTo, [&](){return m_account_repo->getAll();});
+    bool ok = true;
+    try{
+        tran->setAmount(amount);
+        tran->setDate(date);
+        tran->setIdAccount(id_account);
+        tran->setIdAccountTo(id_accountTo);
+    }catch(const std::invalid_argument& e){
+        ok = false;
+        qDebug() << e.what();
+    }
+    if(ok && isAccount && isAccountTo)
+        m_transaction_repo->insert(tran);
+    else
+        throw std::invalid_argument("The transaction is invalid!");
+}
+void TransactionService::updateTransaction(int id, QDate date, double amount,
+                       int id_account, int id_accountTo){
+    // check id
+    if(!isPresent<Account>(id_account, [&](){return m_account_repo->getAll();})){
+        throw std::invalid_argument("Update: There is no source account!");
+    }
+    if(!isPresent<Account>(id_accountTo, [&](){return m_account_repo->getAll();})){
+        throw std::invalid_argument("Update: There is no destination account!");
+    }
+    // this may throw
+    auto tran = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
+    m_transaction_repo->update(tran);
+}
+void TransactionService::deleteTransaction(int id){
+    bool isPresentT = isPresent<Transaction>(id, [&](){return m_transaction_repo->getAll();});
+    if(!isPresentT){
+        throw std::invalid_argument("Delete: There is no such transaction!");
+    }
+    m_transaction_repo->remove(id);
+}
+void TransactionService::getTransactionView(QTextBrowser* browser) const{
+    if(browser == nullptr){
+        return;
+    }
+    browser->append("id   Date   Amount   Id account   Id account To\n");
+    std::vector<Transaction> res = m_transaction_repo->transactionView();
+    for(const Transaction& t : res){
+        browser << t;
+    }
+}
+void TransactionService::buildTransactionsChart(const int w, const int h) const{
+    // TODO: implement
+    std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
+    QVector<QPointF> points = {{1,2}, {5,6}};
+    createChartBox(createChart(points), w, h);
+}

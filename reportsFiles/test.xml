@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Reports email="aliks-os@ukr.net" lib="QtRPT" programmer="Aleksey Osipov">
+  <Script><![CDATA[]]></Script>
+  <Report pageWidth="840" watermarkOpacity="0" pageFormat="" border="0" marginsLeft="40" watermarkPixmap="" marginsTop="40" borderWidth="1" borderStyle="" marginsBottom="40" orientation="0" marginsRight="40" borderColor="" watermark="0" pageNo="1" pageHeight="1188">
+    <ReportBand type="ReportTitle" bandNo="1" name="RepTitleBand1" width="760" height="200">
+      <TContainerField type="label" input_format="" top="38" textWrap="104" highlighting="" ZValue="11" fontFamily="MS Shell Dlg 2" borderStyle="solid" borderColor="rgba(0,0,0,255)" left="70" aligmentV="vCenter" value="Test Report" borderRight="rgba(0,0,0,255)" fontBold="1" fontStrikeout="0" autoHeight="0" width="612" fontColor="rgba(0,0,0,255)" name="field1" groupName="" borderBottom="rgba(0,0,0,255)" borderWidth="1px" aligmentH="hCenter" backgroundColor="rgba(255,255,255,255)" fontSize="56" fontItalic="0" format="" fontUnderline="0" rotate="0" height="118" borderLeft="rgba(0,0,0,255)" borderTop="rgba(0,0,0,255)" renderingMode="0" printing="1"/>
+    </ReportBand>
+  </Report>
+</Reports>

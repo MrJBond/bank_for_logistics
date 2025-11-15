@@ -1,0 +1,5 @@
+build/
+QtRptProject/
+CMakeLists.txt
+CMakeLists.txt.user
+reportsFiles/test.pdf

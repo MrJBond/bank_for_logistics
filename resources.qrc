@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>img/black.png</file>
+        <file>img/dollar.png</file>
+    </qresource>
+    <qresource prefix="/reports">
+        <file>reportsFiles/loanReport.xml</file>
+        <file>reportsFiles/clientTransaction.xml</file>
+        <file>reportsFiles/withNested.xml</file>
+        <file>reportsFiles/nestedReport.xml</file>
+    </qresource>
+</RCC>

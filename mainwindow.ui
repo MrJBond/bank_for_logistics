@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1292</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string/>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-image: url(:/img/img/black.png);</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTextBrowser" name="console">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>1271</width>
+      <height>531</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 0, 0);
+border-color: rgb(0, 0, 0);
+color: rgb(255, 255, 255);</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1292</width>
+     <height>35</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Times New Roman</family>
+     <pointsize>20</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <widget class="QMenu" name="menuReports">
+    <property name="geometry">
+     <rect>
+      <x>278</x>
+      <y>115</y>
+      <width>260</width>
+      <height>120</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>9</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>Reports</string>
+    </property>
+    <addaction name="actionLoanReport"/>
+    <addaction name="actionClientsWithTotalSumReport"/>
+    <addaction name="actionClientAccountReport"/>
+   </widget>
+   <widget class="QMenu" name="menuShow_all">
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>9</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>Show all</string>
+    </property>
+    <addaction name="actionShowClients"/>
+    <addaction name="actionShowAccounts"/>
+    <addaction name="actionShowTransactions"/>
+    <addaction name="actionShowLoans"/>
+   </widget>
+   <widget class="QMenu" name="menuFunctions">
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>9</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>Functions</string>
+    </property>
+    <addaction name="actionGet_clients_with_total_transaction_sum"/>
+    <addaction name="actionGets_clients_legal_and_individuals_sorted_by_amount_of_account_balances"/>
+    <addaction name="actionGet_legal_clients_with_total_transaction_sum"/>
+    <addaction name="actionGet_total_earned_money"/>
+    <addaction name="actionGet_individual_loans"/>
+    <addaction name="actionGet_average_legal_loans"/>
+    <addaction name="actionUpdate_account_amounts_depending_on_the_transactions"/>
+    <addaction name="actionAdd_the_amount_loan_to_the_account"/>
+    <addaction name="actionRecommend_loan_amount"/>
+   </widget>
+   <widget class="QMenu" name="menuInsert">
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>9</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="title">
+     <string>Insert</string>
+    </property>
+    <addaction name="actionInsert_Client"/>
+    <addaction name="actionInsert_Account"/>
+    <addaction name="actionInsert_Transaction"/>
+    <addaction name="actionInsert_Loan"/>
+   </widget>
+   <widget class="QMenu" name="menuUpdate">
+    <property name="title">
+     <string>Update</string>
+    </property>
+    <addaction name="actionUpdate_Client"/>
+    <addaction name="actionUpdate_Account"/>
+    <addaction name="actionUpdate_Transaction"/>
+    <addaction name="actionUpdate_Loan"/>
+   </widget>
+   <widget class="QMenu" name="menuDelete">
+    <property name="title">
+     <string>Delete</string>
+    </property>
+    <addaction name="actionDelete_Client"/>
+    <addaction name="actionDelete_Account"/>
+    <addaction name="actionDelete_Transaction"/>
+    <addaction name="actionDelete_Loan"/>
+   </widget>
+   <widget class="QMenu" name="menuViews">
+    <property name="title">
+     <string>Views</string>
+    </property>
+    <addaction name="actionTransaction_view"/>
+    <addaction name="actionClient_Loan_AccountView"/>
+    <addaction name="actionDirectorView"/>
+    <addaction name="actionLoan_ClientView"/>
+    <addaction name="actionLoanView"/>
+   </widget>
+   <widget class="QMenu" name="menuReset_the_user">
+    <property name="title">
+     <string>Reset the user</string>
+    </property>
+    <addaction name="actionReset"/>
+   </widget>
+   <widget class="QMenu" name="menuCharts">
+    <property name="title">
+     <string>Charts</string>
+    </property>
+    <addaction name="actionChart"/>
+   </widget>
+   <widget class="QMenu" name="menuChat">
+    <property name="title">
+     <string>Chat</string>
+    </property>
+    <addaction name="actionChat"/>
+   </widget>
+   <addaction name="menuReports"/>
+   <addaction name="menuShow_all"/>
+   <addaction name="menuFunctions"/>
+   <addaction name="menuInsert"/>
+   <addaction name="menuUpdate"/>
+   <addaction name="menuDelete"/>
+   <addaction name="menuViews"/>
+   <addaction name="menuReset_the_user"/>
+   <addaction name="menuCharts"/>
+   <addaction name="menuChat"/>
+  </widget>
+  <action name="actionLoanReport">
+   <property name="text">
+    <string>Loan</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionClientsWithTotalSumReport">
+   <property name="text">
+    <string>Clients and total transaction sum report</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionClientAccountReport">
+   <property name="text">
+    <string>Get clients and accounts report</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionShowClients">
+   <property name="text">
+    <string>Clients</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionShowAccounts">
+   <property name="text">
+    <string>Accounts</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionShowTransactions">
+   <property name="text">
+    <string>Transactions</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionShowLoans">
+   <property name="text">
+    <string>Loans</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGet_clients_with_total_transaction_sum">
+   <property name="text">
+    <string>Get clients with total transaction sum</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionInsert_Client">
+   <property name="text">
+    <string>Client</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionInsert_Account">
+   <property name="text">
+    <string>Account</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionInsert_Transaction">
+   <property name="text">
+    <string>Transaction</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionInsert_Loan">
+   <property name="text">
+    <string>Loan</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionUpdate_Client">
+   <property name="text">
+    <string>Client</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionUpdate_Account">
+   <property name="text">
+    <string>Account</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionUpdate_Transaction">
+   <property name="text">
+    <string>Transaction</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionUpdate_Loan">
+   <property name="text">
+    <string>Loan</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionDelete_Client">
+   <property name="text">
+    <string>Client</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionDelete_Account">
+   <property name="text">
+    <string>Account</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionDelete_Transaction">
+   <property name="text">
+    <string>Transaction</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionDelete_Loan">
+   <property name="text">
+    <string>Loan</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGets_clients_legal_and_individuals_sorted_by_amount_of_account_balances">
+   <property name="text">
+    <string>Gets clients, legal and individuals, sorted by
+amount of account balances</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGet_legal_clients_with_total_transaction_sum">
+   <property name="text">
+    <string>Get legal clients with total transaction sum</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGet_total_earned_money">
+   <property name="text">
+    <string>Get total earned money by the bank</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGet_individual_loans">
+   <property name="text">
+    <string>Get individual loans</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionGet_average_legal_loans">
+   <property name="text">
+    <string>Get average legal loans</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionTransaction_view">
+   <property name="text">
+    <string>Transaction</string>
+   </property>
+  </action>
+  <action name="actionClient_Loan_AccountView">
+   <property name="text">
+    <string>Client-Loan-Account</string>
+   </property>
+  </action>
+  <action name="actionDirectorView">
+   <property name="text">
+    <string>Director</string>
+   </property>
+  </action>
+  <action name="actionLoan_ClientView">
+   <property name="text">
+    <string>Loan-Client</string>
+   </property>
+  </action>
+  <action name="actionLoanView">
+   <property name="text">
+    <string>Loan</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="text">
+    <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionUpdate_account_amounts_depending_on_the_transactions">
+   <property name="text">
+    <string>Update account amounts depending on the transactions</string>
+   </property>
+  </action>
+  <action name="actionAdd_the_amount_loan_to_the_account">
+   <property name="text">
+    <string>Add the loan amount to the account</string>
+   </property>
+  </action>
+  <action name="actionChart">
+   <property name="text">
+    <string>Chart</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionRecommend_loan_amount">
+   <property name="text">
+    <string>Recommend loan amount</string>
+   </property>
+  </action>
+  <action name="actionChat">
+   <property name="text">
+    <string>Chat</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

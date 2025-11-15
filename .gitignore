@@ -3,3 +3,8 @@ QtRptProject/
 CMakeLists.txt
 CMakeLists.txt.user
 reportsFiles/test.pdf
+# Qt user-specific settings
+*.pro.user
+
+# Generated machine learning models
+*.joblib

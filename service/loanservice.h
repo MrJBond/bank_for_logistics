@@ -16,7 +16,7 @@ public:
     ~LoanService() = default;
     void getAllLoans(QTextBrowser* browser, QTableWidget *table = nullptr) const;
     void loanReportWithAllLoans(QMainWindow* window) const;
-    void insertLoan(int id_account, QDate issue_date,
+    int insertLoan(int id_account, QDate issue_date,
                     QDate usage_date,double percent,
                     double amount);
     void updateLoan(int id, int id_account, QDate issue_date,

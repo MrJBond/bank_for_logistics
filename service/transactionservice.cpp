@@ -31,7 +31,7 @@ void TransactionService::getAllTransactions(QTextBrowser* browser, QTableWidget 
         }
     }
 }
-void TransactionService::insertTransaction(QDate date, double amount,
+int TransactionService::insertTransaction(QDate date, double amount,
                                            int id_account, int id_accountTo){
     std::shared_ptr<Transaction> tran = std::make_shared<Transaction>();
     std::vector<std::shared_ptr<Entity>> accounts = m_account_repo->getAll();
@@ -49,8 +49,10 @@ void TransactionService::insertTransaction(QDate date, double amount,
         ok = false;
         qDebug() << e.what();
     }
-    if(ok && isAccount && isAccountTo)
+    if(ok && isAccount && isAccountTo){
         m_transaction_repo->insert(tran);
+        return tran->getId();
+    }
     else
         throw std::invalid_argument("The transaction is invalid!");
 }

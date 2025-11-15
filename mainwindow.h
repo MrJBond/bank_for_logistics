@@ -20,6 +20,7 @@
 #include "service/clientservice.h"
 #include "service/loanservice.h"
 #include "service/transactionservice.h"
+#include "auth/usersession.h"
 #include <QProcess>
 
 QT_BEGIN_NAMESPACE
@@ -94,6 +95,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     DbConnector* m_db = nullptr;
+    UserSession* m_session = nullptr;
     QDialog m_dlgLogin;
     QVBoxLayout *m_layoutLogin = nullptr;
     QLineEdit *m_usernameInput = nullptr;
@@ -106,6 +108,7 @@ private:
     QLabel *m_userpasswordLabel = nullptr;
 
     void login(std::function<void()> loginUser);
+    void login(const int id, const QString& name);
     void buildLoginDialog();
     void createMessageBox(const char* message);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);
@@ -119,6 +122,7 @@ private:
     void updateAccount(QVector<QString> object);
     void updateTransaction(QVector<QString> object);
     void updateLoan(QVector<QString> object);
+    std::pair<int, QString> insertClient();
     std::unique_ptr<ClientService> m_client_service = nullptr;
     std::unique_ptr<AccountService> m_account_service = nullptr;
     std::unique_ptr<TransactionService> m_transaction_service = nullptr;

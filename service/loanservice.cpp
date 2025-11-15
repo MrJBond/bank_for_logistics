@@ -75,7 +75,7 @@ void LoanService::loanReportWithAllLoans(QMainWindow* window) const{
     getReport(window, [&](QtRPT* report){ putDataReportWithAllLoans(report); }, record_count);
 }
 
-void LoanService::insertLoan(int id_account, QDate issue_date,
+int LoanService::insertLoan(int id_account, QDate issue_date,
                 QDate usage_date,double percent,
                 double amount){
     std::shared_ptr<Loan> loan = std::make_shared<Loan>();
@@ -91,8 +91,10 @@ void LoanService::insertLoan(int id_account, QDate issue_date,
         ok = false;
         qDebug() << e.what();
     }
-    if(ok && isAccount)
+    if(ok && isAccount){
         m_loan_repo->insert(loan);
+        return loan->getId();
+    }
     else
         throw std::invalid_argument("The loan is invalid!");
 }

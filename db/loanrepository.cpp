@@ -45,6 +45,12 @@ void LoanRepository::insert(std::shared_ptr<Entity> entity) {
         if(!query.exec()){
             throw std::runtime_error(query.lastError().text().toStdString());
         }
+        // Get the last inserted ID
+        QVariant insertedId = query.lastInsertId();
+        if (insertedId.isValid()) {
+            int id = insertedId.toInt();
+            entity->setId(id);
+        }
     }
 }
 void LoanRepository::update(std::shared_ptr<Entity> entity){

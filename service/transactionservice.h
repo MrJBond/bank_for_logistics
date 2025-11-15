@@ -13,7 +13,7 @@ public:
     TransactionService();
     ~TransactionService() = default;
     void getAllTransactions(QTextBrowser* browser, QTableWidget *table = nullptr) const;
-    void insertTransaction(QDate date, double amount,
+    int insertTransaction(QDate date, double amount,
                            int id_account, int id_accountTo);
     void updateTransaction(int id, QDate date, double amount,
                            int id_account, int id_accountTo);

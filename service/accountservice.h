@@ -15,7 +15,7 @@ public:
     AccountService();
     ~AccountService() = default;
     void getAllAccounts(QTextBrowser* browser, QTableWidget *table = nullptr) const;
-    void insertAccount(int id_client, double amount,
+    int insertAccount(int id_client, double amount,
                        QString currency);
     void updateAccount(int id, int id_client, double amount,
                        QString currency);

@@ -276,7 +276,7 @@ void ClientService::getClientsAccountsReport(QMainWindow* window) {
     getReport(window, [&](QtRPT* report){putDataClientsAccountsReport(report, window);}, record_count);
 }
 
-void ClientService::insertClient(QString name, QString address, QString bossName,
+int ClientService::insertClient(QString name, QString address, QString bossName,
                   QString bossPhone, QString accountantName,
                                  QString accountantPhone){
     if(name == "" && address == "" && bossName == ""
@@ -291,6 +291,7 @@ void ClientService::insertClient(QString name, QString address, QString bossName
     client->setAccountantName(accountantName.toStdString());
     client->setAccountantPhone(accountantPhone.toStdString());
     m_client_repo->insert(client);
+    return client->getId();
 }
 void ClientService::updateClient(int id, QString name, QString address, QString bossName,
                   QString bossPhone, QString accountantName,
@@ -349,7 +350,9 @@ void ClientService::getDirectorView(QTextBrowser* browser) const{
                         + ent.currency + "\n");
     }
 }
-
+bool ClientService::isClientPresent(const int id) {
+    return isPresent<Client>(id, [&](){return m_client_repo->getAll();});
+}
 /****************************************************
      *                      AI Lab2
 ****************************************************/

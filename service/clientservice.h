@@ -42,7 +42,7 @@ public:
     // with nested report
     void getClientsAccountsReport(QMainWindow* window);
 
-    void insertClient(QString name, QString address, QString bossName,
+    int insertClient(QString name, QString address, QString bossName,
                       QString bossPhone, QString accountantName,
                       QString accountantPhone);
     void updateClient(int id, QString name, QString address, QString bossName,
@@ -51,6 +51,7 @@ public:
     void deleteClient(int id);
     void getDirectorView(QTextBrowser* browser) const;
 
+    bool isClientPresent(const int id);
 
     /****************************************************
      *                      AI Lab2

@@ -30,7 +30,7 @@ void AccountService::getAllAccounts(QTextBrowser* browser, QTableWidget *table)c
     }
 }
 
-void AccountService::insertAccount(int id_client, double amount, QString currency){
+int AccountService::insertAccount(int id_client, double amount, QString currency){
     std::shared_ptr<Account> acc = std::make_shared<Account>();
     bool isClient = isPresent<Client>(id_client, [&](){return m_client_repo->getAll();});
     bool ok = true;
@@ -42,8 +42,10 @@ void AccountService::insertAccount(int id_client, double amount, QString currenc
         ok = false;
         qDebug() << e.what();
     }
-    if(ok && isClient)
+    if(ok && isClient){
         m_account_repo->insert(acc);
+        return acc->getId();
+    }
     else
         throw std::invalid_argument("The account is invalid!");
 }

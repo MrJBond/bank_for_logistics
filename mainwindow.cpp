@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     try{
         m_db = DbConnector::getInstance();
+        m_session = UserSession::getInstance();
     }catch(const std::runtime_error& e){
         qDebug() << e.what();
     }
@@ -31,14 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
             connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginBankUser);
         });
         connect(m_signupButton, &QPushButton::clicked, this, &MainWindow::attemptSignupBankUser);
-        if(m_dlgLogin.exec() != QDialog::Accepted){
-            throw std::runtime_error("Failed to login!");
-        }
         // services
         m_client_service = std::make_unique<ClientService>();
         m_account_service = std::make_unique<AccountService>();
         m_transaction_service = std::make_unique<TransactionService>();
         m_loan_service = std::make_unique<LoanService>();
+
+        if(m_dlgLogin.exec() != QDialog::Accepted){
+            throw std::runtime_error("Failed to login!");
+        }
+
         m_pythonServerProcess = new QProcess(this);
         startPythonServer();
         connect(m_client_service.get(), &ClientService::chatReplyString,
@@ -63,6 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     stopPythonServer();
+    m_session->destroySession();
     delete ui;
 }
 void MainWindow::buildLoginDialog(){
@@ -103,6 +107,9 @@ void MainWindow::login(std::function<void()> loginUser){
         }
     }
 }
+void MainWindow::login(const int id, const QString& name){
+    m_session->createSession(id, name);
+}
 void MainWindow::attemptLoginDbUser(){
     login([&](){
         m_db->reConnect(m_usernameInput->text(),
@@ -114,25 +121,28 @@ void MainWindow::attemptLoginBankUser(){
         qDebug() << "Bank user log in";
         const QString name = m_usernameInput->text();
         const QString password = m_userpasswordInput->text();
+        int id = 0;
         /*
          * TODO:
          * 1. id = m_clientRepo->getClient(name, password)
          *    if must throw std::runtime_error
-         * 2. set current user
+         *
+         * Get client by name and password (need a new table)
+         *
          */
+        login(id, name);
         throw std::runtime_error("Check if user exists ");
     };
     login(userLogin);
 }
 void MainWindow::attemptSignupBankUser(){
     qDebug() << "Bank user sign up";
-    on_actionInsert_Client_triggered();
-    /* TODO:
-     * 1. Create a separate insert function
-     * 2. get id from insert
-     * 3. log in
-
-    */
+    std::pair<int, QString> c = insertClient();
+    qDebug() << c.first;
+   if(c.first != 0)
+       login(c.first, c.second);
+   else
+       qDebug() << "Failed to sign up!";
 }
 void MainWindow::createDialogBox(QString title, QDialog& dlg, QFormLayout *layout){
     dlg.setWindowTitle(title);
@@ -364,18 +374,20 @@ void MainWindow::createMessageBox(const char* message){
 /*************************************************************
                         INSERT
 **************************************************************/
-void MainWindow::on_actionInsert_Client_triggered(){
+std::pair<int, QString> MainWindow::insertClient(){
     std::vector<QString> names = {"Client's name", "Address", "Name of the Boss",
-    "Phone of the Boss", "Accountant's name", "Accountant's phone"};
+                                  "Phone of the Boss", "Accountant's name", "Accountant's phone"};
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the client", names);
     if(res.size() != 0){
+        int id = 0;
         try{
-            m_client_service->insertClient(res["Client's name"],
-                                           res["Address"],
-                                           res["Name of the Boss"],
-                                           res["Phone of the Boss"],
-                                           res["Accountant's name"],
-                                           res["Accountant's phone"]);
+            id = m_client_service->insertClient(res["Client's name"],
+                                                res["Address"],
+                                                res["Name of the Boss"],
+                                                res["Phone of the Boss"],
+                                                res["Accountant's name"],
+                                                res["Accountant's phone"]);
+            return std::make_pair(id, res["Client's name"]);
         }catch(const std::invalid_argument& e){
             createMessageBox(e.what());
             qDebug() << e.what();
@@ -385,13 +397,19 @@ void MainWindow::on_actionInsert_Client_triggered(){
             qDebug() << e.what();
         }
     }
+    return std::make_pair(0, res["Client's name"]);
+}
+void MainWindow::on_actionInsert_Client_triggered(){
+    std::pair<int, QString> c = insertClient();
+    qDebug() << c.first << " " << c.second;
 }
 void MainWindow::on_actionInsert_Account_triggered(){
     std::vector<QString> names = {"Amount", "Currency", "Client's Id"};
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the account", names);
     if(res.size() != 0){
+        int id = 0;
         try{
-            m_account_service->insertAccount(res["Client's Id"].toInt(),
+            id = m_account_service->insertAccount(res["Client's Id"].toInt(),
                                              res["Amount"].toDouble(),
                                              res["Currency"]);
 
@@ -409,8 +427,9 @@ void MainWindow::on_actionInsert_Transaction_triggered(){
     std::vector<QString> names = {"Date (yyyy-MM-dd)", "Amount", "Source Account", "Destination Account"};
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the transaction", names);
     if(res.size() != 0){
+        int id = 0;
         try{
-            m_transaction_service->insertTransaction(QDate::fromString(res["Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
+            id = m_transaction_service->insertTransaction(QDate::fromString(res["Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
                                                      res["Amount"].toDouble(),
                                                      res["Source Account"].toInt(),
                                                      res["Destination Account"].toInt());
@@ -429,8 +448,9 @@ void MainWindow::on_actionInsert_Loan_triggered(){
                                   "Usage Date (yyyy-MM-dd)", "Percent","Amount"};
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the loan", names);
     if(res.size() != 0){
+        int id = 0;
         try{
-            m_loan_service->insertLoan(res["Account"].toInt(),
+            id = m_loan_service->insertLoan(res["Account"].toInt(),
                                        QDate::fromString(res["Issue Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
                                        QDate::fromString(res["Usage Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
                                        res["Percent"].toDouble(),

@@ -107,7 +107,7 @@ void MainWindow::login(std::function<void()> loginUser){
         }
     }
 }
-void MainWindow::login(const int id, const QString& name){
+void MainWindow::createUserSession(const int id, const QString& name){
     m_session->createSession(id, name);
 }
 void MainWindow::attemptLoginDbUser(){
@@ -115,23 +115,15 @@ void MainWindow::attemptLoginDbUser(){
         m_db->reConnect(m_usernameInput->text(),
                         m_userpasswordInput->text());
     });
+    // don't create a session here
 }
 void MainWindow::attemptLoginBankUser(){
     auto userLogin = [&](){
         qDebug() << "Bank user log in";
         const QString name = m_usernameInput->text();
         const QString password = m_userpasswordInput->text();
-        int id = 0;
-        /*
-         * TODO:
-         * 1. id = m_clientRepo->getClient(name, password)
-         *    if must throw std::runtime_error
-         *
-         * Get client by name and password (need a new table)
-         *
-         */
-        login(id, name);
-        throw std::runtime_error("Check if user exists ");
+        const int id = m_session->login(name, password); // thows std::runtime_error
+        createUserSession(id, name);
     };
     login(userLogin);
 }
@@ -139,8 +131,19 @@ void MainWindow::attemptSignupBankUser(){
     qDebug() << "Bank user sign up";
     std::pair<int, QString> c = insertClient();
     qDebug() << c.first;
-   if(c.first != 0)
-       login(c.first, c.second);
+    if(c.first != 0){
+        createUserSession(c.first, c.second);
+        auto userLogin = [](){
+            /* TODO
+             * 1. ask for the password
+                1) twice
+                2) insert into credentials table
+                it must throw std::runtime_error
+            */
+            throw std::runtime_error("Add credentials");
+        };
+        login(userLogin);
+    }
    else
        qDebug() << "Failed to sign up!";
 }

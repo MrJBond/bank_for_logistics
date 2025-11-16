@@ -2,11 +2,15 @@
 #define USERSESSION_H
 
 #include <QString>
+#include <QCryptographicHash>
+#include <QDebug>
+#include <QSqlQuery>
 
 class UserSession
 {
 public:
     static UserSession* getInstance();
+    int login(const QString& username, const QString& password);
     void createSession(int userId, const QString& username);
     void destroySession();
     int getUserId() const;

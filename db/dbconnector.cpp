@@ -4,7 +4,7 @@ DbConnector::DbConnector() {
     db = QSqlDatabase::addDatabase("QPSQL");
     db.setHostName("localhost");
     db.setDatabaseName("Bank");
-    db.setUserName("postgres");
+    db.setUserName("bank_app_user");
     db.setPassword("qwerty");
     db.setPort(5432);
     if (!db.open()) {

@@ -108,7 +108,7 @@ private:
     QLabel *m_userpasswordLabel = nullptr;
 
     void login(std::function<void()> loginUser);
-    void login(const int id, const QString& name);
+    void createUserSession(const int id, const QString& name);
     void buildLoginDialog();
     void createMessageBox(const char* message);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);

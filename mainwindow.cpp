@@ -122,30 +122,33 @@ void MainWindow::attemptLoginBankUser(){
         qDebug() << "Bank user log in";
         const QString name = m_usernameInput->text();
         const QString password = m_userpasswordInput->text();
-        const int id = m_session->login(name, password); // thows std::runtime_error
+        const int id = m_session->login(name, password); // might throw std::runtime_error, it will be caught in login(...)
         createUserSession(id, name);
     };
     login(userLogin);
 }
 void MainWindow::attemptSignupBankUser(){
     qDebug() << "Bank user sign up";
-    std::pair<int, QString> c = insertClient();
-    qDebug() << c.first;
-    if(c.first != 0){
-        createUserSession(c.first, c.second);
-        auto userLogin = [](){
-            /* TODO
-             * 1. ask for the password
-                1) twice
-                2) insert into credentials table
-                it must throw std::runtime_error
-            */
-            throw std::runtime_error("Add credentials");
-        };
-        login(userLogin);
-    }
-   else
-       qDebug() << "Failed to sign up!";
+    auto userLogin = [&](){
+        std::vector<QString> names = {"Client's name", "Address", "Name of the Boss",
+                                  "Phone of the Boss", "Accountant's name", "Accountant's phone",
+                                  "Password", "Confirm password"};
+        std::unordered_map<QString, QString> res;
+        while(1){
+            res = createDialogInsert("Password", names);
+            if(res["Password"] != res["Confirm password"])
+                createMessageBox("There is a mismatch in passwords!");
+            else
+                break;
+        }
+        const int id = m_session->saveUserPassword(m_client_service.get(),
+                                                   res["Client's name"], res["Password"], res["Address"],
+                                                   res["Name of the Boss"], res["Phone of the Boss"],
+                                                   res["Accountant's name"], res["Accountant's phone"]
+                                                   ); // might throw std::runtime_error, it will be caught in login(...)
+        createUserSession(id, res["Client's name"]);
+    };
+    login(userLogin);
 }
 void MainWindow::createDialogBox(QString title, QDialog& dlg, QFormLayout *layout){
     dlg.setWindowTitle(title);

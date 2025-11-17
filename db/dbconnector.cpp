@@ -18,6 +18,9 @@ DbConnector* DbConnector::getInstance() {
     static DbConnector instance;  // Thread-safe singleton
     return &instance;
 }
+QSqlDatabase* DbConnector::getDb() {
+    return &db;
+}
 void DbConnector::reConnect(const QString& name, const QString& password){
     QString curUserName = db.userName();
     QString curUserPassword = db.password();

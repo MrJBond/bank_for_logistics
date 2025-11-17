@@ -13,6 +13,7 @@ public:
     DbConnector(DbConnector& other) = delete;
     void operator=(const DbConnector& other) = delete;
     void reConnect(const QString& name, const QString& password);
+    QSqlDatabase* getDb();
 private:
     DbConnector();
     QSqlDatabase db;

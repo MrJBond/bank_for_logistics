@@ -42,6 +42,61 @@ int UserSession::login(const QString& username, const QString& password)
     }
 }
 
+int UserSession::saveUserPassword(ClientService* service, const QString& username, const QString& password,
+                                  const QString& address,
+                                  const QString& bossName, const QString& bossPhone,
+                                  const QString& accountantName, const QString& accountantPhone)
+{
+    QSqlDatabase *db = DbConnector::getInstance()->getDb();
+    if (!db->transaction()) {
+        const QString message = "Failed to start database transaction: " + db->lastError().text();
+        throw std::runtime_error(message.toStdString());
+    }
+
+    try
+    {
+        // --- A: insert into Client table
+        const int id = service->insertClient(username, address, bossName, bossPhone, accountantName, accountantPhone);
+        if (id <= 0)
+            throw std::runtime_error("Client service failed to return a valid ID.");
+
+        // --- B: "ClientAuth"
+        QByteArray hexHashBytes = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex();
+        QString passwordHashString = QString(hexHashBytes);
+
+        QSqlQuery queryAuth;
+        queryAuth.prepare(
+            "INSERT INTO public.\"ClientAuth\" (id_client, username, password_hash) "
+            "VALUES (:id, :username, :hash)"
+            );
+        queryAuth.bindValue(":id", id);
+        queryAuth.bindValue(":username", username);
+        queryAuth.bindValue(":hash", passwordHashString);
+
+        if (!queryAuth.exec()) {
+            // it will be caught and rollback for the point --- A will be called
+            const QString message = "Failed to create auth record: " + queryAuth.lastError().text();
+            throw std::runtime_error(message.toStdString());
+        }
+        // --- C: Commit
+        if (!db->commit()) {
+            const QString message = "Failed to commit transaction: " + db->lastError().text();
+            throw std::runtime_error(message.toStdString());
+        }
+        qDebug() << "Transaction successful: Auth record created for user: " << username;
+        return id;
+    }
+    catch (const std::exception& e)
+    {
+        // --- D: Rollback
+        // if something in the point A, B or C has thrown
+        qCritical() << "Transaction FAILED, rolling back: " << e.what();
+        db->rollback();
+        // notify the caller
+        throw std::runtime_error("Transaction FAILED");
+    }
+}
+
 void UserSession::createSession(int userId, const QString& username)
 {
     m_userId = userId;

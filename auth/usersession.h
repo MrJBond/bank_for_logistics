@@ -5,12 +5,19 @@
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QSqlQuery>
+#include <QSqlError>
+#include "service/clientservice.h"
+#include "db/dbconnector.h"
 
 class UserSession
 {
 public:
     static UserSession* getInstance();
     int login(const QString& username, const QString& password);
+    int saveUserPassword(ClientService* service, const QString& username, const QString& password,
+                          const QString& address,
+                          const QString& bossName, const QString& bossPhone,
+                          const QString& accountantName, const QString& accountantPhone);
     void createSession(int userId, const QString& username);
     void destroySession();
     int getUserId() const;

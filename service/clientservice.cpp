@@ -279,6 +279,8 @@ void ClientService::getClientsAccountsReport(QMainWindow* window) {
 int ClientService::insertClient(QString name, QString address, QString bossName,
                   QString bossPhone, QString accountantName,
                                  QString accountantPhone){
+    if(name == "")
+        throw std::invalid_argument("The client's name must be non-empty and unique!");
     if(name == "" && address == "" && bossName == ""
         && bossPhone == "" && accountantName == "" && accountantPhone == ""){
         throw std::invalid_argument("The client is invalid!");
@@ -296,6 +298,8 @@ int ClientService::insertClient(QString name, QString address, QString bossName,
 void ClientService::updateClient(int id, QString name, QString address, QString bossName,
                   QString bossPhone, QString accountantName,
                   QString accountantPhone){
+    if(name == "")
+        throw std::invalid_argument("The client's name must be non-empty and unique!");
     if(name == "" && address == "" && bossName == ""
         && bossPhone == "" && accountantName == "" && accountantPhone == ""){
         throw std::invalid_argument("Update: The client is invalid!");

@@ -61,6 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     QString style = "background-color: white; color: red;";
     ui->menubar->setStyleSheet(style);
+    qDebug() << " User session: " << m_session->getUserId()
+             << " " << m_session->getUsername() << " "
+             << m_session->isLoggedIn();
 }
 
 MainWindow::~MainWindow()

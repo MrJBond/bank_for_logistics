@@ -83,7 +83,9 @@ private slots:
     void on_actionDirectorView_triggered();
     void on_actionLoan_ClientView_triggered();
     void on_actionLoanView_triggered();
+    // user
     void on_actionReset_triggered();
+    void on_actionLog_out_triggered();
     // charts
     void on_actionChart_triggered();
     // Chat
@@ -110,6 +112,9 @@ private:
     void login(std::function<void()> loginUser);
     void createUserSession(const int id, const QString& name);
     void buildLoginDialog();
+    void disconnectLoginSignals();
+    void resetLoginDialog();
+    void connectLoginDialog();
     void createMessageBox(const char* message);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);
     void createDialogBox(QString title, QDialog& dlg, QFormLayout *layout);

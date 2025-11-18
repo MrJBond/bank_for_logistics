@@ -15,23 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
     if(m_db){
         buildLoginDialog();
-        auto disconnectLoginSignals = [&](){
-            disconnect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
-            disconnect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginBankUser);
-        };
-        connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
-        m_signupButton->setEnabled(false);
-        connect(m_dbUserRadioButton, &QRadioButton::toggled, this, [&](){
-            m_signupButton->setEnabled(false);
-            disconnectLoginSignals();
-            connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
-        });
-        connect(m_userRadioButton, &QRadioButton::toggled, this, [&](){
-            m_signupButton->setEnabled(true);
-            disconnectLoginSignals();
-            connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginBankUser);
-        });
-        connect(m_signupButton, &QPushButton::clicked, this, &MainWindow::attemptSignupBankUser);
+        connectLoginDialog();
         // services
         m_client_service = std::make_unique<ClientService>();
         m_account_service = std::make_unique<AccountService>();
@@ -72,6 +56,9 @@ MainWindow::~MainWindow()
     m_session->destroySession();
     delete ui;
 }
+/***************************************************************
+                    Log in / Sign up
+ ***************************************************************/
 void MainWindow::buildLoginDialog(){
     m_dlgLogin.setModal(true);
     m_dlgLogin.setWindowTitle("Login");
@@ -97,6 +84,63 @@ void MainWindow::buildLoginDialog(){
     m_layoutLogin->addWidget(m_userpasswordInput);
     m_layoutLogin->addWidget(m_loginButton);
     m_layoutLogin->addWidget(m_signupButton);
+}
+void MainWindow::resetLoginDialog(){
+    if(m_layoutLogin){
+        delete m_layoutLogin;
+        m_layoutLogin = nullptr;
+    }
+    if(m_usernameInput){
+        delete m_usernameInput;
+        m_usernameInput = nullptr;
+    }
+    if(m_userpasswordInput){
+        delete m_userpasswordInput;
+        m_userpasswordInput = nullptr;
+    }
+    if(m_loginButton){
+        delete m_loginButton;
+        m_loginButton = nullptr;
+    }
+    if(m_signupButton){
+        delete m_signupButton;
+        m_signupButton = nullptr;
+    }
+    if(m_userRadioButton){
+        delete m_userRadioButton;
+        m_userRadioButton = nullptr;
+    }
+    if(m_dbUserRadioButton){
+        delete m_dbUserRadioButton;
+        m_dbUserRadioButton = nullptr;
+    }
+    if(m_usernameLabel){
+        delete m_usernameLabel;
+        m_usernameLabel = nullptr;
+    }
+    if(m_userpasswordLabel){
+        delete m_userpasswordLabel;
+        m_userpasswordLabel = nullptr;
+    }
+}
+void MainWindow::disconnectLoginSignals(){
+    disconnect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
+    disconnect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginBankUser);
+}
+void MainWindow::connectLoginDialog(){
+    connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
+    m_signupButton->setEnabled(false);
+    connect(m_dbUserRadioButton, &QRadioButton::toggled, this, [&](){
+        m_signupButton->setEnabled(false);
+        disconnectLoginSignals();
+        connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
+    });
+    connect(m_userRadioButton, &QRadioButton::toggled, this, [&](){
+        m_signupButton->setEnabled(true);
+        disconnectLoginSignals();
+        connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginBankUser);
+    });
+    connect(m_signupButton, &QPushButton::clicked, this, &MainWindow::attemptSignupBankUser);
 }
 void MainWindow::login(std::function<void()> loginUser){
     if(m_db){
@@ -153,6 +197,9 @@ void MainWindow::attemptSignupBankUser(){
     };
     login(userLogin);
 }
+/***************************************************************
+                    UI helper functions
+ ***************************************************************/
 void MainWindow::createDialogBox(QString title, QDialog& dlg, QFormLayout *layout){
     dlg.setWindowTitle(title);
     QDialogButtonBox *btn_box = new QDialogButtonBox(&dlg);
@@ -654,16 +701,34 @@ void MainWindow::on_actionLoanView_triggered(){
 /*************************************************************
                         USER
 **************************************************************/
+void MainWindow::on_actionLog_out_triggered(){
+    m_session->destroySession();
+    qDebug() << m_session->getUserId() << " " << m_session->getUsername();
+}
 void MainWindow::on_actionReset_triggered(){
-    std::vector<QString> names = {"User name ", "Password "};
-    std::unordered_map<QString, QString> res = createDialogInsert("Reset user", names);
-    if(res.size() != 0)
-        try{
-            m_db->reConnect(res[names[0]], res[names[1]]);
-        }catch(const std::runtime_error& e){
-            createMessageBox(e.what());
-            qDebug() << e.what();
+    resetLoginDialog();
+    buildLoginDialog();
+    connectLoginDialog();
+    if(m_dlgLogin.exec() != QDialog::Accepted)
+       qDebug() << "Failed to login!";
+    else{
+        if(m_userRadioButton->isChecked()){
+            try{
+                m_db->reConnect("bank_app_user",
+                                    "qwerty");
+            }catch(const std::runtime_error& e){
+                qDebug() << e.what();
+            }
+        }else{
+            try{
+                m_db->reConnect(m_usernameInput->text(),
+                                    m_userpasswordInput->text());
+            }catch(const std::runtime_error& e){
+                qDebug() << e.what();
+            }
         }
+    }
+    qDebug() << m_session->getUserId() << " " << m_session->getUsername();
 }
 /**********************************************************
                         CHARTS
@@ -680,10 +745,7 @@ void MainWindow::on_actionChart_triggered(){
      *                      AI Lab2
 ****************************************************/
 void MainWindow::on_actionRecommend_loan_amount_triggered(){
-    m_client_service->recommendLoanAmount(21); // Client id = 21
-    /* TODO:
-      1. Get a client
-     */
+    m_client_service->recommendLoanAmount(m_session->getUserId()); // Client id = 21 is good for testing
 }
 void MainWindow::startPythonServer()
 {

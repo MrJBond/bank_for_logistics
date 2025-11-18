@@ -170,6 +170,7 @@ color: rgb(255, 255, 255);</string>
      <string>Reset the user</string>
     </property>
     <addaction name="actionReset"/>
+    <addaction name="actionLog_out"/>
    </widget>
    <widget class="QMenu" name="menuCharts">
     <property name="title">
@@ -451,6 +452,11 @@ amount of account balances</string>
   <action name="actionChat">
    <property name="text">
     <string>Chat</string>
+   </property>
+  </action>
+  <action name="actionLog_out">
+   <property name="text">
+    <string>Log out</string>
    </property>
   </action>
  </widget>

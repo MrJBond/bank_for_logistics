@@ -86,6 +86,7 @@ private slots:
     // user
     void on_actionReset_triggered();
     void on_actionLog_out_triggered();
+    void on_actionWho_am_I_triggered();
     // charts
     void on_actionChart_triggered();
     // Chat

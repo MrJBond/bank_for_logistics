@@ -160,7 +160,8 @@ void MainWindow::createUserSession(const int id, const QString& name){
 void MainWindow::attemptLoginDbUser(){
     login([&](){
         m_db->reConnect(m_usernameInput->text(),
-                        m_userpasswordInput->text());
+                        m_userpasswordInput->text()); // might throw and will be caught in login(...)
+        m_session->destroySession();
     });
     // don't create a session here
 }
@@ -729,6 +730,12 @@ void MainWindow::on_actionReset_triggered(){
         }
     }
     qDebug() << m_session->getUserId() << " " << m_session->getUsername();
+}
+void MainWindow::on_actionWho_am_I_triggered(){
+    QString str = QString::number(m_session->getUserId()) +
+                  " " + m_session->getUsername() + " " +
+                  (m_session->isLoggedIn() ? "true" : "false");
+    createMessageBox(str.toStdString().c_str());
 }
 /**********************************************************
                         CHARTS

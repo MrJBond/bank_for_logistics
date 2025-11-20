@@ -1,4 +1,5 @@
 #include "usersession.h"
+#include "service/clientservice.h"
 
 UserSession* UserSession::getInstance()
 {

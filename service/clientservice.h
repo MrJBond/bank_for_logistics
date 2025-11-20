@@ -2,16 +2,19 @@
 #define CLIENTSERVICE_H
 
 #include "db/clientrepository.h"
+#include "db/transactionrepository.h"
 #include "qtextbrowser.h"
 #include "service/abstractservice.h"
 #include "AI/loanrecommender.h"
 #include "AI/chatbot.h"
 
+class UserSession;
 class ClientService : public AbstractService
 {
     Q_OBJECT
 private:
     std::shared_ptr<ClientRepository> m_client_repo = nullptr;
+    std::shared_ptr<TransactionRepository> m_transaction_repo = nullptr;
     void putDataClientsWithTotalSumReport(QtRPT* report, QVector<QString> id_client,
                                           QVector<QString> name_client, QVector<QString> total_sum) const;
     // with nested report
@@ -20,6 +23,7 @@ private:
 
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
+    UserSession* m_session = nullptr;
 public:
     ClientService();
     ~ClientService(){
@@ -64,6 +68,7 @@ signals:
     void networkFailure(const QString& errorString);
     void loanRejection();
     void finalLoanAmount(double amount);
+    void balanceCheckResult(const std::vector<Account>& accounts);
  private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleLoanRejection();

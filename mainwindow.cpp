@@ -36,6 +36,8 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleLoanRejection);
         connect(m_client_service.get(), &ClientService::networkFailure,
                 this, &MainWindow::handleNetworkFailure);
+        connect(m_client_service.get(), &ClientService::balanceCheckResult,
+                this, &MainWindow::handleBalanceCheckResult);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -752,7 +754,11 @@ void MainWindow::on_actionChart_triggered(){
      *                      AI Lab2
 ****************************************************/
 void MainWindow::on_actionRecommend_loan_amount_triggered(){
-    m_client_service->recommendLoanAmount(m_session->getUserId()); // Client id = 21 is good for testing
+    try{
+        m_client_service->recommendLoanAmount(m_session->getUserId()); // Client id = 21 is good for testing
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+    }
 }
 void MainWindow::startPythonServer()
 {
@@ -872,4 +878,9 @@ void MainWindow::handleFinalLoanAmount(double amount){
     QString str("Recommended Loan Amount is ");
     str += QString::number(amount);
     createMessageBox(str.toStdString().c_str());
+}
+void MainWindow::handleBalanceCheckResult(const std::vector<Account>& accounts){
+    ui->console->clear();
+    for(const Account& a : accounts)
+        ui->console << a;
 }

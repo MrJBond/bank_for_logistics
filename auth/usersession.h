@@ -6,8 +6,9 @@
 #include <QDebug>
 #include <QSqlQuery>
 #include <QSqlError>
-#include "service/clientservice.h"
 #include "db/dbconnector.h"
+
+class ClientService;
 
 class UserSession
 {

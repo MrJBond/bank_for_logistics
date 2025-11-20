@@ -1,9 +1,12 @@
 #include "clientservice.h"
+#include "auth/usersession.h"
 
 ClientService::ClientService() {
     m_client_repo = std::make_shared<ClientRepository>(ClientRepository());
+    m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
     m_loanRecommender = new LoanRecommender();
     m_chatBot = new ChatBot();
+    m_session = UserSession::getInstance();
     connect(m_loanRecommender, &LoanRecommender::finalLoanAmountReady,
             this, &ClientService::handleFinalLoanAmount);
 
@@ -362,6 +365,10 @@ bool ClientService::isClientPresent(const int id) {
 ****************************************************/
 void ClientService::recommendLoanAmount(const int id) const{
     double avg_income = 0., stability_metric = 0., existing_debt = 0.;
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
     try{
         avg_income = m_client_repo->averageMonthlyIncome(id);
         stability_metric = m_client_repo->incomeVolatility(id);
@@ -377,6 +384,7 @@ void ClientService::recommendLoanAmount(const int id) const{
     qDebug() << "existing_debt: " << existing_debt;
     m_loanRecommender->requestLoanRecommendation(avg_income, stability_metric, existing_debt);
 }
+
 void ClientService::handleFinalLoanAmount(double amount)
 {
     // The result has arrived!
@@ -401,17 +409,35 @@ void ClientService::handleNetworkFailure(const QString& errorString)
 void ClientService::getBotResponse(const QString& userText){
     m_chatBot->requestChat(userText);
 }
+
 void ClientService::handleChatReply(const QString& intent, const QString& reply){
     qDebug() << "ClientService: " << intent << " " << reply;
     emit chatReplyString(reply);
     if(intent == "check_balance"){
-        // TODO
+        try{
+            const std::vector<Account> balance = m_client_repo->getAccountsForClient(m_session->getUserId());
+            emit balanceCheckResult(balance);
+        }catch(const std::runtime_error& e){
+            qDebug() << "ChatBot ERROR: " << e.what();
+            emit networkFailure(e.what());
+        }catch(const std::invalid_argument& e){
+            qDebug() << "ChatBot ERROR: " << e.what();
+            emit networkFailure(e.what());
+        }
     }else if(intent == "request_loan_recommendation"){
-        // TODO: get real id
-        recommendLoanAmount(21); // using a random id to test
+        try{
+            recommendLoanAmount(m_session->getUserId()); // 21 using a random id to test
+        }catch(const std::runtime_error& e){
+            qDebug() << "ChatBot ERROR: " << e.what();
+            emit loanRejection();
+        }
     }
     else if(intent == "list_transactions"){
-        // TODO
+        const std::vector<Account> accs = m_client_repo->getAccountsForClient(m_session->getUserId());
+        for(const Account& a : accs){
+            m_transaction_repo->getTransactionsForAccount(a.getId()); // TODO: implement this function
+        }
+
     }
     else if(intent == "greeting"){
         // don't have to do anything here...

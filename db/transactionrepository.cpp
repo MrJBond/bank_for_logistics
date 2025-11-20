@@ -96,3 +96,6 @@ std::vector<Transaction> TransactionRepository::transactionView() const{
     }
     return res;
 }
+std::vector<Transaction> TransactionRepository::getTransactionsForAccount(const int id_account) const{
+    // TODO
+}

@@ -14,6 +14,7 @@ public:
     void update(std::shared_ptr<Entity> entity) override;
     void remove(int id) override;
     std::vector<Transaction> transactionView() const;
+    std::vector<Transaction> getTransactionsForAccount(const int id_account) const;
 };
 
 #endif // TRANSACTIONREPOSITORY_H

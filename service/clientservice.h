@@ -20,6 +20,7 @@ private:
     // with nested report
     void putDataClientsAccountsReport(QtRPT* report, QMainWindow* window);
     void putDataSubReport(QtRPT* report, std::vector<Account> accs) const;
+    std::vector<Transaction> listTransactions(const int id_client) const;
 
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
@@ -69,6 +70,7 @@ signals:
     void loanRejection();
     void finalLoanAmount(double amount);
     void balanceCheckResult(const std::vector<Account>& accounts);
+    void transactionListResult(const std::vector<Transaction>& transactions);
  private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleLoanRejection();

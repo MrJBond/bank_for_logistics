@@ -96,6 +96,7 @@ private slots:
     void handleLoanRejection();
     void handleFinalLoanAmount(double amount);
     void handleBalanceCheckResult(const std::vector<Account>& accounts);
+    void handleTransactionListResult(const std::vector<Transaction>& transactions);
 private:
     Ui::MainWindow *ui;
     DbConnector* m_db = nullptr;

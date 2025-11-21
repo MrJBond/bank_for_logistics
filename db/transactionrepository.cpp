@@ -97,5 +97,27 @@ std::vector<Transaction> TransactionRepository::transactionView() const{
     return res;
 }
 std::vector<Transaction> TransactionRepository::getTransactionsForAccount(const int id_account) const{
-    // TODO
+    if(id_account <= 0){
+        throw std::invalid_argument("The account's id is invalid!");
+    }
+    std::vector<Transaction> res;
+    QSqlQuery query;
+    query.prepare("SELECT * FROM \"Transaction\" WHERE id_account = :id OR \"id_accountTo\" = :id");
+    query.bindValue(":id", id_account);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    while(query.next()){
+        try{
+            Transaction t = Transaction(query.value(0).toInt(),
+                                        query.value(1).toDate(),
+                                        query.value(2).toDouble(),
+                                        query.value(3).toInt(),
+                                        query.value(4).toInt());
+            res.push_back(t);
+        }catch(const std::invalid_argument& e){
+            qDebug() << e.what();
+        }
+    }
+    return res;
 }

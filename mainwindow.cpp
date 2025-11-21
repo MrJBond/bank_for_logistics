@@ -38,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleNetworkFailure);
         connect(m_client_service.get(), &ClientService::balanceCheckResult,
                 this, &MainWindow::handleBalanceCheckResult);
+        connect(m_client_service.get(), &ClientService::transactionListResult,
+                this, &MainWindow::handleTransactionListResult);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -883,4 +885,9 @@ void MainWindow::handleBalanceCheckResult(const std::vector<Account>& accounts){
     ui->console->clear();
     for(const Account& a : accounts)
         ui->console << a;
+}
+void MainWindow::handleTransactionListResult(const std::vector<Transaction>& transactions){
+    ui->console->clear();
+    for(const Transaction& t : transactions)
+        ui->console << t;
 }

@@ -26,6 +26,13 @@ public:
     virtual ~Entity() = default;
     int getId() const;
     void setId(const int id);
+
+    bool operator==(const Entity& other) const{
+        return m_id == other.m_id;
+    }
+    bool operator<(const Entity& other) const{
+        return m_id < other.m_id;
+    }
 };
 
 #endif // ENTITY_H

@@ -384,7 +384,18 @@ void ClientService::recommendLoanAmount(const int id) const{
     qDebug() << "existing_debt: " << existing_debt;
     m_loanRecommender->requestLoanRecommendation(avg_income, stability_metric, existing_debt);
 }
-
+std::vector<Transaction> ClientService::listTransactions(const int id_client) const{
+    const std::vector<Account> accs = m_client_repo->getAccountsForClient(id_client); // might throw
+    std::vector<Transaction> res;
+    for(const Account& a : accs){
+        std::vector<Transaction> tran = m_transaction_repo->getTransactionsForAccount(a.getId());
+        res.insert(std::end(res), std::begin(tran), std::end(tran));
+    }
+    // remove duplicates if any
+    std::sort(res.begin(), res.end());
+    res.erase(std::unique(res.begin(), res.end()), res.end());
+    return res;
+}
 void ClientService::handleFinalLoanAmount(double amount)
 {
     // The result has arrived!
@@ -413,36 +424,29 @@ void ClientService::getBotResponse(const QString& userText){
 void ClientService::handleChatReply(const QString& intent, const QString& reply){
     qDebug() << "ClientService: " << intent << " " << reply;
     emit chatReplyString(reply);
-    if(intent == "check_balance"){
-        try{
+    try{
+        if(intent == "check_balance"){
             const std::vector<Account> balance = m_client_repo->getAccountsForClient(m_session->getUserId());
             emit balanceCheckResult(balance);
-        }catch(const std::runtime_error& e){
-            qDebug() << "ChatBot ERROR: " << e.what();
-            emit networkFailure(e.what());
-        }catch(const std::invalid_argument& e){
-            qDebug() << "ChatBot ERROR: " << e.what();
-            emit networkFailure(e.what());
-        }
-    }else if(intent == "request_loan_recommendation"){
-        try{
+        }else if(intent == "request_loan_recommendation"){
             recommendLoanAmount(m_session->getUserId()); // 21 using a random id to test
-        }catch(const std::runtime_error& e){
-            qDebug() << "ChatBot ERROR: " << e.what();
-            emit loanRejection();
         }
-    }
-    else if(intent == "list_transactions"){
-        const std::vector<Account> accs = m_client_repo->getAccountsForClient(m_session->getUserId());
-        for(const Account& a : accs){
-            m_transaction_repo->getTransactionsForAccount(a.getId()); // TODO: implement this function
+        else if(intent == "list_transactions"){
+            const std::vector<Transaction> tran = listTransactions(m_session->getUserId());
+            emit transactionListResult(tran);
         }
+        else if(intent == "greeting"){
+            // don't have to do anything here...
+        }
+        else if(intent == "unknown"){
+            // don't have to do anything here...
+        }else{}
 
+    }catch(const std::runtime_error& e){
+        qDebug() << "ChatBot ERROR: " << e.what();
+        emit networkFailure(e.what());
+    }catch(const std::invalid_argument& e){
+        qDebug() << "ChatBot ERROR: " << e.what();
+        emit networkFailure(e.what());
     }
-    else if(intent == "greeting"){
-        // don't have to do anything here...
-    }
-    else if(intent == "unknown"){
-        // don't have to do anything here...
-    }else{}
 }

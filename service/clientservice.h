@@ -25,6 +25,23 @@ private:
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
     UserSession* m_session = nullptr;
+
+    void sendToPythonBot(const QString& userText);
+
+    // --- SURVEY STATE VARIABLES --- [Bot's asses_risk feature]
+    bool m_isSurveyActive = false;
+    int m_currentQuestionIndex = 0;
+    int m_riskScore = 0; // We will calculate points based on answers
+
+    const std::vector<QString> m_surveyQuestions = {
+        "Question 1/3: Do you have an emergency fund covering 3 months of expenses? (yes/no)",
+        "Question 2/3: If your investment dropped 20% in one day, would you sell everything? (yes/no)",
+        "Question 3/3: Are you planning to retire within the next 5 years? (yes/no)"
+    };
+    void startRiskSurvey();
+    void processSurveyAnswer(const QString& answer);
+    void finishSurvey();
+
 public:
     ClientService();
     ~ClientService(){
@@ -62,7 +79,8 @@ public:
      *                      AI Lab2
     ****************************************************/
     void recommendLoanAmount(const int id) const; // $
-    void getBotResponse(const QString& userText);
+    // Call this when the user types a message [for the survey: asses_risk]
+    void handleUserMessage(const QString& msg);
 signals:
     // to notify the MainWindow
     void chatReplyString(const QString& reply);
@@ -76,6 +94,7 @@ signals:
     void handleLoanRejection();
     void handleFinalLoanAmount(double amount);
     void handleChatReply(const QString& intent, const QString& reply);
+    void handleRecommendation(double score, double averageMonthlyIncome);
 };
 
 #endif // CLIENTSERVICE_H

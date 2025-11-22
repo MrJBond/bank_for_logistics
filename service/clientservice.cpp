@@ -21,6 +21,9 @@ ClientService::ClientService() {
 
     connect(m_chatBot, &ChatBot::networkError,
             this, &ClientService::handleNetworkFailure);
+
+    connect(m_loanRecommender, &LoanRecommender::recommendationReady,
+            this, &ClientService::handleRecommendation);
 }
 void ClientService::getAllClients(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_client_repo->getAll();
@@ -398,15 +401,21 @@ std::vector<Transaction> ClientService::listTransactions(const int id_client) co
 }
 void ClientService::handleFinalLoanAmount(double amount)
 {
+    // Bot reply
+    const QString reply = QString("Based on your history, I can recommend up to $%1.").arg(amount);
     // The result has arrived!
     qDebug() << "ClientService: Suggested Loan: " << amount;
     emit finalLoanAmount(amount);
+    emit chatReplyString(reply);
 }
 
 void ClientService::handleLoanRejection()
 {
     // The rejection message has arrived!
     qDebug() << "ClientService: Loan Application Rejected.";
+    // Bot reply
+    const QString reply = "I've analyzed your profile. Unfortunately, based on your current financial stability and debt, I cannot recommend a loan at this time.";
+    emit chatReplyString(reply);
     emit loanRejection();
 }
 
@@ -417,8 +426,20 @@ void ClientService::handleNetworkFailure(const QString& errorString)
     emit networkFailure(errorString);
 }
 
-void ClientService::getBotResponse(const QString& userText){
+void ClientService::sendToPythonBot(const QString& userText){
     m_chatBot->requestChat(userText);
+}
+
+// Bot's Entry Point
+void ClientService::handleUserMessage(const QString& msg) {
+    // CASE A: Survey is running -> Intercept the message!
+    if (m_isSurveyActive) {
+        // Process the answer locally
+        processSurveyAnswer(msg);
+        return; // STOP HERE. Do not send to Python.
+    }
+    // CASE B: Normal Chat -> Send to Python
+    sendToPythonBot(msg);
 }
 
 void ClientService::handleChatReply(const QString& intent, const QString& reply){
@@ -427,15 +448,55 @@ void ClientService::handleChatReply(const QString& intent, const QString& reply)
     try{
         if(intent == "check_balance"){
             const std::vector<Account> balance = m_client_repo->getAccountsForClient(m_session->getUserId());
-            emit balanceCheckResult(balance);
+            if (balance.empty()) {
+                emit chatReplyString("It looks like you don't have any active accounts with us yet.");
+            } else {
+                QString msg = "Here is the breakdown of your accounts:\n";
+                for (const auto& acc : balance) {
+                    msg += QString("- %1 Account: %2\n")
+                               .arg(acc.getCurrency())
+                               .arg(acc.getAmount(), 0, 'f', 2);
+                }
+                emit chatReplyString(msg); // Bot speaks the list
+                emit balanceCheckResult(balance); // App shows the detailed table
+
+                double total = 0;
+                for(auto& acc : balance)
+                    total += acc.getAmount() / Entity::m_dollarCost.at(acc.getCurrency()); // to $
+                // Smart Follow-up
+                if (total > 50000)
+                    emit chatReplyString("💡 You have a significant balance! You should consider opening a high-interest savings account.");
+                else if (total < 100)
+                    emit chatReplyString("⚠️ Your balance is running low. Would you like to check your loan eligibility? Just ask 'Can I get a loan?'");
+            }
         }else if(intent == "request_loan_recommendation"){
             recommendLoanAmount(m_session->getUserId()); // 21 using a random id to test
         }
         else if(intent == "list_transactions"){
             const std::vector<Transaction> tran = listTransactions(m_session->getUserId());
-            emit transactionListResult(tran);
+            if (tran.empty()) {
+                emit chatReplyString("I looked through your records, but I couldn't find any recent transactions.");
+            } else {
+                // --- "Talk" Logic ---
+                double totalAmount = 0.0;
+                for (const auto& t : tran) {
+                    totalAmount += t.getAmount();
+                }
+                QString summary = QString("I found %1 recent transactions. The total volume is $%2.")
+                                      .arg(tran.size())
+                                      .arg(totalAmount, 0, 'f', 2);
+
+                emit chatReplyString(summary); // Bot speaks the summary
+                emit transactionListResult(tran); // App shows the detailed table
+            }
+        }
+        else if (intent == "assess_risk") {
+            startRiskSurvey();
         }
         else if(intent == "greeting"){
+            // don't have to do anything here...
+        }
+        else if (intent == "gratitude") {
             // don't have to do anything here...
         }
         else if(intent == "unknown"){
@@ -449,4 +510,69 @@ void ClientService::handleChatReply(const QString& intent, const QString& reply)
         qDebug() << "ChatBot ERROR: " << e.what();
         emit networkFailure(e.what());
     }
+}
+void ClientService::handleRecommendation(double score, double averageMonthlyIncome){
+    QString reply;
+    if(score < 20){ /* Rejection is handled in a different function */}
+    else if (score < 50) {
+        reply = QString("You are eligible for a small loan.");
+    } else {
+        reply = QString("Great news! You have a strong financial profile.");
+    }
+    emit chatReplyString(reply);
+}
+
+// --- SURVEY [Bot's asses_risk feature]
+// 1. Starting the Survey
+void ClientService::startRiskSurvey() {
+    m_isSurveyActive = true;
+    m_currentQuestionIndex = 0;
+    m_riskScore = 0;
+    // Ask the first question
+    emit chatReplyString("Let's figure out your risk profile. " + m_surveyQuestions[0]);
+}
+// 2. Processing Answers
+void ClientService::processSurveyAnswer(const QString& answer) {
+    QString cleanAnswer = answer.toLower().trimmed();
+
+    // --- Simple Logic to Calculate Score ---
+    // Q1: Emergency Fund? (Yes = Good/Safe)
+    if (m_currentQuestionIndex == 0) {
+        if (cleanAnswer == "yes") m_riskScore += 10;
+    }
+    // Q2: Panic Sell? (Yes = Risk Averse/Safe)
+    else if (m_currentQuestionIndex == 1) {
+        if (cleanAnswer == "yes") m_riskScore += 10;
+    }
+    // Q3: Retiring soon? (Yes = Should be Safe)
+    else if (m_currentQuestionIndex == 2) {
+        if (cleanAnswer == "yes") m_riskScore += 10;
+    }
+
+    // --- Move to Next Question ---
+    m_currentQuestionIndex++;
+
+    if (m_currentQuestionIndex < m_surveyQuestions.size()) {
+        // Ask the next question
+        emit chatReplyString(m_surveyQuestions[m_currentQuestionIndex]);
+    } else {
+        // No more questions
+        finishSurvey();
+    }
+}
+
+// 3. Finishing Up
+void ClientService::finishSurvey() {
+    m_isSurveyActive = false; // Turn off interception
+
+    QString resultMsg;
+    if (m_riskScore >= 20) {
+        resultMsg = "Analysis complete. You are a **Conservative Investor**. You prioritize safety over high returns. I recommend our Fixed Deposit accounts.";
+    } else if (m_riskScore >= 10) {
+        resultMsg = "Analysis complete. You are a **Balanced Investor**. You can handle some market fluctuation. I recommend our Index Funds.";
+    } else {
+        resultMsg = "Analysis complete. You are an **Aggressive Investor**. You are looking for growth. Have you checked our Stock Trading platform?";
+    }
+
+    emit chatReplyString(resultMsg);
 }

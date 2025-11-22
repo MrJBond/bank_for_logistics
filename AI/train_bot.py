@@ -17,16 +17,20 @@ training_data = [
     ("what's my balance", 'check_balance'),
     ("show me the money", 'check_balance'),
 
+
     ("How much of a loan can I get?", 'request_loan'),
     ("recommend a loan", 'request_loan'),
     ("am i eligible for a loan", 'request_loan'),
+
 
     ("show my transaction history", 'list_transactions'),
     ("what are my recent transactions", 'list_transactions'),
     ("list my payments", 'list_transactions'),
 
+
     ("hi", 'greeting'),
     ("hello", 'greeting'),
+
 
     ('unknown', 'unknown'),
     ('sdfsdgfsg', 'unknown'),
@@ -34,6 +38,22 @@ training_data = [
     ('what is the weather', 'unknown'),
     ('asdasd asdasd', 'unknown'),
     ('my car is blue', 'unknown'),
+
+
+    ("assess my financial risk", 'assess_risk'),
+    ("start risk quiz", 'assess_risk'),
+    ("risk profile", 'assess_risk'),
+    ("i want to answer some questions", 'assess_risk'),
+
+
+    ("thanks", 'gratitude'),
+    ("thank you", 'gratitude'),
+    ("thanks a lot", 'gratitude'),
+    ("thank you very much", 'gratitude'),
+    ("thx", 'gratitude'),
+    ("appreciate it", 'gratitude'),
+    ("thanks for the help", 'gratitude'),
+    ("cool thanks", 'gratitude'),
 ]
 
 # 2. Separate data

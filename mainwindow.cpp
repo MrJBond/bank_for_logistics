@@ -861,7 +861,7 @@ void MainWindow::on_actionChat_triggered(){
             if (!newText.isEmpty()) {
                 m_chatHistory->append("<b>You: </b> " + newText); // Append new text
                 lineEdits[0]->clear(); // Clear the input field
-                m_client_service->getBotResponse(newText);
+                m_client_service->handleUserMessage(newText);
             }
         });
     }

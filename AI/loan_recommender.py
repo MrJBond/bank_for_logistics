@@ -180,6 +180,18 @@ def handle_chat():
         response = {'intent': 'list_transactions', 'reply': 'Here are your recent transactions:'}
     elif predicted_intent == 'greeting':
         response = {'intent': 'greeting', 'reply': 'Hello! How can I help?'}
+    elif predicted_intent == 'assess_risk':
+        # The reply text here is just a placeholder.
+        # C++ app will immediately take over and show the first question.
+        response = {
+            'intent': 'assess_risk',
+            'reply': 'Sure, let me help you determine your investment risk profile.'
+        }
+    elif predicted_intent == 'gratitude':
+        response = {
+            'intent': 'gratitude',
+            'reply': "You're welcome! Let me know if you need help with anything else."
+        }
     else:
         response = {'intent': 'unknown', 'reply': "Sorry, I'm not sure."}
 

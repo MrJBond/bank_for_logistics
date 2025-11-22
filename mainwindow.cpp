@@ -837,6 +837,12 @@ void MainWindow::stopPythonServer()
 void MainWindow::on_actionChat_triggered(){
     m_chatHistory = new QTextEdit();
     QDialog dlg(this);
+    connect(&dlg, &QDialog::finished, this, [&](int result) {
+        if(m_chatHistory){
+            delete m_chatHistory;
+            m_chatHistory = nullptr;
+        }
+    });
     QFormLayout *layout = new QFormLayout();
     createDialogBox("Chat", dlg, layout);
     m_chatHistory->setReadOnly(true);
@@ -868,7 +874,8 @@ void MainWindow::on_actionChat_triggered(){
     dlg.exec();
 }
 void MainWindow::handleChatBotReply(const QString& reply){
-    m_chatHistory->append("<b>Bot: </b> " + reply);
+    if(m_chatHistory)
+        m_chatHistory->append("<b>Bot: </b> " + reply);
 }
 void MainWindow::handleNetworkFailure(const QString& errorString){
     createMessageBox(errorString.toStdString().c_str());

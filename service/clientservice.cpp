@@ -536,17 +536,32 @@ void ClientService::processSurveyAnswer(const QString& answer) {
     QString cleanAnswer = answer.toLower().trimmed();
 
     // --- Simple Logic to Calculate Score ---
+    auto isAffirmative = [](const QString& text) -> bool{
+        QString t = text.toLower().trimmed();
+        return (t == "yes" || t == "y" || t == "yeah" || t == "sure" || t == "yup");
+    };
+    auto isNegative = [](const QString& text) -> bool{
+        QString t = text.toLower().trimmed();
+        return (t == "no" || t == "n" || t == "nope" || t == "nah");
+    };
+    // If it's NOT yes AND it's NOT no, it's garbage input
+    if (!isAffirmative(answer) && !isNegative(answer)) {
+        emit chatReplyString("I didn't quite get that. Please answer with 'Yes' or 'No'.");
+        // We do NOT increment the question index
+        // The user effectively stays on the current question
+        return;
+    }
     // Q1: Emergency Fund? (Yes = Good/Safe)
     if (m_currentQuestionIndex == 0) {
-        if (cleanAnswer == "yes") m_riskScore += 10;
+        if (isAffirmative(cleanAnswer)) m_riskScore += 10;
     }
     // Q2: Panic Sell? (Yes = Risk Averse/Safe)
     else if (m_currentQuestionIndex == 1) {
-        if (cleanAnswer == "yes") m_riskScore += 10;
+        if (isAffirmative(cleanAnswer)) m_riskScore += 10;
     }
     // Q3: Retiring soon? (Yes = Should be Safe)
     else if (m_currentQuestionIndex == 2) {
-        if (cleanAnswer == "yes") m_riskScore += 10;
+        if (isAffirmative(cleanAnswer)) m_riskScore += 10;
     }
 
     // --- Move to Next Question ---

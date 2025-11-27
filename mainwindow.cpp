@@ -875,7 +875,7 @@ void MainWindow::on_actionChat_triggered(){
 }
 void MainWindow::handleChatBotReply(const QString& reply){
     if(m_chatHistory)
-        m_chatHistory->append("<b>Bot: </b> " + reply);
+        m_chatHistory->append("<b>Penny: </b> " + reply);
 }
 void MainWindow::handleNetworkFailure(const QString& errorString){
     createMessageBox(errorString.toStdString().c_str());

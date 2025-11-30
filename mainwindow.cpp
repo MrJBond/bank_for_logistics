@@ -749,7 +749,7 @@ void MainWindow::on_actionChart_triggered(){
     TODO:
     1. Charts
     */
-    m_transaction_service->buildTransactionsChart(300, 500);
+    m_transaction_service->buildTransactionsChart(this->width(), this->height());
 }
 
 /****************************************************

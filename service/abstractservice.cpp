@@ -69,19 +69,67 @@ int AbstractService::getCurYear() const{
         std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
     return static_cast<int>(today.year());
 }
-QChartView* AbstractService::createChart(const QVector<QPointF>& points) const{
-    // TODO: set some properties
-    QLineSeries *series = new QLineSeries();
-    series->append(points);
+/*****************************************
+                CHARTS
+ *****************************************/
+void AbstractService::setChartProperties(QChart* chart, const QString& title) const{
+    // 1. Theme: The "Easy Button" for good looks
+    chart->setTheme(QChart::ChartThemeBlueCerulean);
+    // 2. Title & Legend
+    chart->setTitle(title);
+    chart->setTitleFont(QFont("Segoe UI", 16, QFont::Bold));
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    chart->legend()->setBackgroundVisible(true);
+}
+void AbstractService::setBarSetProperties(QBarSet* barSet, std::function<QString(int)> toolTipText) const{
+    // Remove the jagged outline (Pen) to make bars look smoother
+    barSet->setPen(Qt::NoPen);
+    // specific color that contrasts well with the dark blue theme
+    barSet->setColor(QColor(0, 180, 255));
+    // Labels: Show the specific value on top of the bar
+    barSet->setLabelColor(Qt::white);
+    barSet->setLabelFont(QFont("Arial", 10, QFont::Bold));
+
+    // Connect the "hovered" signal
+    // 'status' is true when entering the bar, false when leaving
+    // 'index' tells WHICH bar is being hovered (0, 1, 2...)
+    QObject::connect(barSet, &QBarSet::hovered, [=](bool status, int index) {
+        if (status) {
+            // Show the standard Qt Tooltip at the mouse cursor position
+            QToolTip::showText(QCursor::pos(), toolTipText(index));
+        } else {
+            // Hide the tooltip when the mouse leaves the bar
+            QToolTip::hideText();
+        }
+    });
+}
+QChartView* AbstractService::createBarChart(QBarSet* barSet, const QString& title, const QStringList& categories, std::function<QString(int)> toolTipText) const{
+    setBarSetProperties(barSet, toolTipText);
+    QBarSeries *series = new QBarSeries();
+    series->append(barSet);
     QChart* chart = new QChart();
+    setChartProperties(chart, title);
+
+    QBarCategoryAxis* axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    axisX->setGridLineVisible(false);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setGridLineColor(QColor(255, 255, 255, 50)); // White with transparency
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+
+    chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->addSeries(series);
     QChartView* chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
     return chartView;
 }
 void AbstractService::createChartBox(QChartView* chartView, const int w, const int h) const{
-    // TODO: set some properties
     QDialog dialog;
-    QVBoxLayout layout(&dialog);
+    QVBoxLayout layout(&dialog);    
     layout.addWidget(chartView);
     dialog.resize(w, h);
     dialog.exec();

@@ -87,8 +87,25 @@ void TransactionService::getTransactionView(QTextBrowser* browser) const{
     }
 }
 void TransactionService::buildTransactionsChart(const int w, const int h) const{
-    // TODO: implement
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
-    QVector<QPointF> points = {{1,2}, {5,6}};
-    createChartBox(createChart(points), w, h);
+    QStringList categories;
+    QBarSet* barSet = new QBarSet("Amount");
+    for(const auto& ent : res){
+        Transaction* transaction = dynamic_cast<Transaction*>(ent.get());
+        if(transaction){
+            // Only append the amount to the bar height
+            *barSet << transaction->getAmount();
+            // Save the ID to use as the label below the bar later
+            categories << QString::number(transaction->getIdAccount());
+        }
+    }
+    auto toolTipText = [&](const int index) -> QString {
+        // Retrieve the value of the bar using the index
+        double amount = barSet->at(index);
+        // Format the text
+        QString toolTipText = QString("Amount: %1 ").arg(amount, 0, 'f', 2);
+        return toolTipText;
+    };
+    QChartView* barChart = createBarChart(barSet, "Account Transactions", categories, toolTipText);
+    createChartBox(barChart, w, h);
 }

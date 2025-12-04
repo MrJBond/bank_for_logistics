@@ -5,6 +5,7 @@ AbstractService::AbstractService(QObject *parent)
     : QObject{parent}
 {
     m_account_repo = std::make_shared<AccountRepository>(AccountRepository());
+    m_session = UserSession::getInstance();
 }
 AbstractService::~AbstractService(){}
 
@@ -104,12 +105,9 @@ void AbstractService::setBarSetProperties(QBarSet* barSet, std::function<QString
         }
     });
 }
-QChartView* AbstractService::createBarChart(QBarSet* barSet, const QString& title, const QStringList& categories, std::function<QString(int)> toolTipText) const{
-    setBarSetProperties(barSet, toolTipText);
-    QBarSeries *series = new QBarSeries();
-    series->append(barSet);
-    QChart* chart = new QChart();
+QChartView* AbstractService::setChartAndAxisProperties(QChart* chart, QAbstractSeries* series, const QString& title, const QStringList& categories) const{
     setChartProperties(chart, title);
+    chart->addSeries(series);
 
     QBarCategoryAxis* axisX = new QBarCategoryAxis();
     axisX->append(categories);
@@ -122,10 +120,16 @@ QChartView* AbstractService::createBarChart(QBarSet* barSet, const QString& titl
     series->attachAxis(axisY);
 
     chart->setAnimationOptions(QChart::SeriesAnimations);
-    chart->addSeries(series);
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
     return chartView;
+}
+QChartView* AbstractService::createBarChart(QBarSet* barSet, const QString& title, const QStringList& categories, std::function<QString(int)> toolTipText) const{
+    setBarSetProperties(barSet, toolTipText);
+    QBarSeries *series = new QBarSeries();
+    series->append(barSet);
+    QChart* chart = new QChart();
+    return setChartAndAxisProperties(chart, series, title, categories);
 }
 void AbstractService::createChartBox(QChartView* chartView, const int w, const int h) const{
     QDialog dialog;

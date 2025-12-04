@@ -90,14 +90,17 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
     QStringList categories;
     QBarSet* barSet = new QBarSet("Amount");
+    std::map<int, double> amountSums;
     for(const auto& ent : res){
         Transaction* transaction = dynamic_cast<Transaction*>(ent.get());
-        if(transaction){
-            // Only append the amount to the bar height
-            *barSet << transaction->getAmount();
-            // Save the ID to use as the label below the bar later
-            categories << QString::number(transaction->getIdAccount());
-        }
+        if(transaction)
+            amountSums[transaction->getIdAccount()] += transaction->getAmount();
+    }
+    for(const auto& t : amountSums){
+        // Only append the amount to the bar height
+        *barSet << t.second;
+        // Save the ID to use as the label below the bar later
+        categories << QString::number(t.first);
     }
     auto toolTipText = [&](const int index) -> QString {
         // Retrieve the value of the bar using the index

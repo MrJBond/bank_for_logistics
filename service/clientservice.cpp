@@ -1,12 +1,10 @@
 #include "clientservice.h"
-#include "auth/usersession.h"
 
 ClientService::ClientService() {
     m_client_repo = std::make_shared<ClientRepository>(ClientRepository());
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
     m_loanRecommender = new LoanRecommender();
     m_chatBot = new ChatBot();
-    m_session = UserSession::getInstance();
     connect(m_loanRecommender, &LoanRecommender::finalLoanAmountReady,
             this, &ClientService::handleFinalLoanAmount);
 
@@ -590,4 +588,139 @@ void ClientService::finishSurvey() {
     }
 
     emit chatReplyString(resultMsg);
+}
+
+ClientService::MonthlyData ClientService::getMonthlyIncomeExpenses(const int clientId, const QDate& startDate) const {
+    const std::vector<Transaction> trans = listTransactions(clientId);  // throws runtime_error | invalid_argument
+    const std::vector<Account> accs = m_client_repo->getAccountsForClient(clientId); // throws runtime_error | invalid_argument
+    MonthlyData totalResult;
+    for(const Account& a : accs){
+        const int myAccountId = a.getId();
+        MonthlyData accResult; // for account
+        for (const Transaction& t : trans) {
+            if (t.getDate() < startDate)
+                continue; // Skip old transactions
+
+            const QString monthKey = t.getDate().toString("yyyy-MM");
+            const double amount = t.getAmount();
+
+            // Ensure the month entry exists (initializes to {0.0, 0.0})
+            if (!accResult.contains(monthKey))
+                accResult[monthKey] = std::make_pair(0.0, 0.0);
+            if(!totalResult.contains(monthKey))
+                totalResult[monthKey] = std::make_pair(0.0, 0.0);
+
+            // isAccountMine throws runtime_error | invalid_argument
+            if (t.getIdAccountTo() == myAccountId
+                && !m_client_repo->isAccountMine(clientId, t.getIdAccount())) { // prevent my_Acc to another_my_Acc
+                // Money coming TO me -> INCOME (First element of pair)
+                accResult[monthKey].first += amount;
+                qDebug() << "Account: " << myAccountId << " : Income += " << amount;
+            }
+            else if (t.getIdAccount() == myAccountId
+                       && !m_client_repo->isAccountMine(clientId, t.getIdAccountTo())) { // prevent my_Acc to another_my_Acc
+                // Money coming FROM me -> EXPENSE (Second element of pair)
+                accResult[monthKey].second += amount;
+                qDebug() << "Account: " << myAccountId << " : Expense += " << amount;
+            }
+        }
+        // sum all accounts, taking the currency into consideration
+        const QList keys = accResult.keys();
+        for(const QString& month : keys){
+            totalResult[month].first += accResult[month].first / Entity::m_dollarCost.at(a.getCurrency()); // to $
+            totalResult[month].second += accResult[month].second / Entity::m_dollarCost.at(a.getCurrency()); // to $
+        }
+    }
+    return totalResult;
+}
+/********************************************************
+                    CHARTS
+ *********************************************************/
+void ClientService::incomeExpensesChart(const int w, const int h) const{
+    const int id = m_session->getUserId();
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
+    const QDate twelveMonthsAgo = QDate::currentDate().addYears(-1);
+    const MonthlyData data = getMonthlyIncomeExpenses(id, twelveMonthsAgo); // throws runtime_error | invalid_argument
+    qDebug() << data;
+
+    // build chart
+    QBarSet *barSet = new QBarSet("Net Balance");
+    QStringList categories;
+    for (auto it = data.begin(); it != data.end(); ++it) {
+        const QString monthKey = it.key();
+        // --- Combine Income and Expense into one number ---
+        const double income = it.value().first;
+        const double expense = it.value().second;
+        const double net = income - expense;
+        *barSet << net;
+        QDate d = QDate::fromString(monthKey, "yyyy-MM");
+        categories << d.toString("MMM");
+    }
+    auto toolTipText = [&](const int index) -> QString {
+        // Retrieve the value of the bar using the index
+        double amount = barSet->at(index);
+        // Format the text
+        QString toolTipText = QString("net: %1 ").arg(amount, 0, 'f', 2);
+        return toolTipText;
+    };
+    QChartView* barChart = createBarChart(barSet, "Net Savings (Income - Expenses)", categories, toolTipText);
+    createChartBox(barChart, w, h);
+}
+QLineSeries* ClientService::fetchBalanceHistory(const int id_client, QStringList& categories) const{
+    const QDate twelveMonthsAgo = QDate::currentDate().addYears(-1);
+    const MonthlyData data = getMonthlyIncomeExpenses(id_client, twelveMonthsAgo); // throws runtime_error | invalid_argument
+    const double currentFinalBalance = m_client_repo->getTotalCurrentBalance(id_client); // throws runtime_error | invalid_argument
+    // Calculate the "Starting Balance" (Balance 12 months ago)
+    double totalNetChangeOverPeriod = 0.0;
+    for (auto it = data.begin(); it != data.end(); ++it) {
+        const double income = it.value().first;
+        const double expense = it.value().second;
+        totalNetChangeOverPeriod += (income - expense);
+    }
+    // If I have 1000 now, and I saved 200 over the year, I started with 800.
+    double runningBalance = currentFinalBalance - totalNetChangeOverPeriod;
+    // Create the Series
+    QLineSeries *series = new QLineSeries();
+    series->setName("Balance History");
+
+    int xIndex = 0; // We use 0, 1, 2... for the X-axis
+
+    // Add the starting point (before the first month's data applies)
+     series->append(xIndex++, runningBalance);
+    // Iterate Forward to generate points
+    // Since 'data' is a QMap, this loop iterates from Oldest Date -> Newest Date
+    for (auto it = data.begin(); it != data.end(); ++it) {
+        const double income = it.value().first;
+        const double expense = it.value().second;
+        const double netChange = income - expense;
+        // Apply the change for this month
+        runningBalance += netChange;
+        // Add the point to the graph
+        // X = Month Index, Y = Balance
+        series->append(xIndex, runningBalance);
+        xIndex++;
+        categories << QDate::fromString(it.key(), "yyyy-MM").toString("MMM");
+    }
+    // Verify: runningBalance should now equal currentFinalBalance (roughly)
+    qDebug() << runningBalance << " " << currentFinalBalance;
+    return series;
+}
+void ClientService::balanceHistoryChart(const int w, const int h) const{
+    /*
+     * Shows the trend of wealth. "Am I getting richer or poorer over time?"
+     */
+    const int id = m_session->getUserId();
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
+    QStringList categories;
+    QLineSeries* series = fetchBalanceHistory(id, categories); // throws runtime_error | invalid_argument
+    // build chart
+    QChart *chart = new QChart();
+    QChartView* chartView = setChartAndAxisProperties(chart, series, "Balance History (Last 12 Months)", categories);
+    createChartBox(chartView, w, h);
 }

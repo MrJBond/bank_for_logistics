@@ -94,3 +94,28 @@ void AccountService::addLoanToAccount(int id_account, double amount){
     // this may throw
     m_account_repo->addLoanToAccount(id_account, amount);
 }
+/******************************************************
+                CHARTS
+ ********************************************************/
+void AccountService::currencyChart(const int w, const int h) const{
+    std::vector<std::shared_ptr<Entity>> accounts = m_account_repo->getAll();
+    QStringList categories;
+    QBarSet* barSet = new QBarSet("Amount");
+    std::unordered_map<QString, double> currencySum;
+    for(const auto& ent : accounts)
+        if(Account* acc = dynamic_cast<Account*>(ent.get()); acc)
+            currencySum[acc->getCurrency()] += acc->getAmount();
+    for(const auto& a : currencySum){
+        *barSet << a.second;
+        categories << a.first;
+    }
+    auto toolTipText = [&](const int index) -> QString {
+        // Retrieve the value of the bar using the index
+        double amount = barSet->at(index);
+        // Format the text
+        QString toolTipText = QString("Total amount: %1 ").arg(amount, 0, 'f', 2);
+        return toolTipText;
+    };
+    QChartView* barChart = createBarChart(barSet, "Total amount", categories, toolTipText);
+    createChartBox(barChart, w, h);
+}

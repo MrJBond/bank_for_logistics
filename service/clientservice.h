@@ -8,7 +8,6 @@
 #include "AI/loanrecommender.h"
 #include "AI/chatbot.h"
 
-class UserSession;
 class ClientService : public AbstractService
 {
     Q_OBJECT
@@ -24,7 +23,6 @@ private:
 
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
-    UserSession* m_session = nullptr;
 
     void sendToPythonBot(const QString& userText);
 
@@ -41,6 +39,11 @@ private:
     void startRiskSurvey();
     void processSurveyAnswer(const QString& answer);
     void finishSurvey();
+
+    // return type: Key = "yyyy-MM", Value = {Income, Expense}
+    typedef QMap<QString, std::pair<double, double>> MonthlyData;
+    MonthlyData getMonthlyIncomeExpenses(const int clientId, const QDate& startDate) const;
+    QLineSeries* fetchBalanceHistory(const int id_client, QStringList& categories) const;
 
 public:
     ClientService();
@@ -75,6 +78,11 @@ public:
 
     bool isClientPresent(const int id);
 
+    /*****************************************************
+                            CHARTS
+     *****************************************************/
+    void incomeExpensesChart(const int w, const int h) const;
+    void balanceHistoryChart(const int w, const int h) const;
     /****************************************************
      *                      AI Lab2
     ****************************************************/
@@ -96,5 +104,4 @@ signals:
     void handleChatReply(const QString& intent, const QString& reply);
     void handleRecommendation(double score, double averageMonthlyIncome);
 };
-
 #endif // CLIENTSERVICE_H

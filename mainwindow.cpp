@@ -744,14 +744,36 @@ void MainWindow::on_actionWho_am_I_triggered(){
 /**********************************************************
                         CHARTS
  **********************************************************/
-void MainWindow::on_actionChart_triggered(){
-    /*
-    TODO:
-    1. Charts
-    */
+void MainWindow::on_actionTransactionsChart_triggered(){
     m_transaction_service->buildTransactionsChart(this->width(), this->height());
 }
-
+void MainWindow::on_actionTotal_currencyChart_triggered(){
+    m_account_service->currencyChart(this->width(), this->height());
+}
+void MainWindow::on_actionIncome_Expenses_triggered(){
+    try{
+        m_client_service->incomeExpensesChart(this->width(), this->height());
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    catch(const std::invalid_argument& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+}
+void MainWindow::on_actionBalance_History_triggered(){
+    try{
+        m_client_service->balanceHistoryChart(this->width(), this->height());
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    catch(const std::invalid_argument& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+}
 /****************************************************
      *                      AI Lab2
 ****************************************************/

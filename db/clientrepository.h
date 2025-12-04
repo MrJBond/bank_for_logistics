@@ -33,7 +33,8 @@ public:
     // Nested report => clients + their accounts + total money
     std::vector<Account> getAccountsForClient(const int id_client) const;
     std::vector<directorView> getDirectorView() const;
-
+    bool isAccountMine(const int id_client, const int id_account) const;
+    double getTotalCurrentBalance(const int id_client) const; // $
     /****************************************************
      *                      AI Lab2
      ****************************************************/

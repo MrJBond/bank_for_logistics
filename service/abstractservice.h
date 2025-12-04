@@ -20,6 +20,7 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <map>
+#include "auth/usersession.h"
 
 class AbstractService : public QObject
 {
@@ -28,6 +29,7 @@ private:
     const std::string m_filePath = ":/reports/reportsFiles/";
     std::string m_fileName = "";
 protected:
+    UserSession* m_session = nullptr;
     std::shared_ptr<AccountRepository> m_account_repo = nullptr;
     // pointer by reference to modify the pointer itself
     bool buildReport(QMainWindow* window, QtRPT*& report) const;
@@ -51,6 +53,7 @@ protected:
 
     // charts
     void setChartProperties(QChart* chart, const QString& title) const;
+    QChartView* setChartAndAxisProperties(QChart* chart, QAbstractSeries* series, const QString& title, const QStringList& categories) const;
     QChartView* createBarChart(QBarSet* barSet, const QString& title, const QStringList& categories, std::function<QString(int)> toolTipText) const;
     void setBarSetProperties(QBarSet* barSet, std::function<QString(int)> toolTipText) const;
     void createChartBox(QChartView* chartView, const int w, const int h) const;

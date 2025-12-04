@@ -88,7 +88,10 @@ private slots:
     void on_actionLog_out_triggered();
     void on_actionWho_am_I_triggered();
     // charts
-    void on_actionChart_triggered();
+    void on_actionTransactionsChart_triggered();
+    void on_actionTotal_currencyChart_triggered();
+    void on_actionIncome_Expenses_triggered();
+    void on_actionBalance_History_triggered();
     // Chat
     void on_actionChat_triggered();
     void handleChatBotReply(const QString& reply);

@@ -325,3 +325,20 @@ double ClientRepository::existingDebtLoad(const int id_client) const{
     }
     return totalLoan;
 }
+
+bool ClientRepository::isAccountMine(const int id_client, const int id_account) const{
+    const std::vector<Account> accs = getAccountsForClient(id_client);
+    for(const Account& a : accs)
+        if(a.getId() == id_account)
+            return id_client == a.getClientId();
+    return false;
+}
+double ClientRepository::getTotalCurrentBalance(const int id_client) const{
+    const std::vector<Account> accs = getAccountsForClient(id_client);
+    double total = 0.;
+    for(const Account& a : accs){
+        const double currentBalance = a.getAmount() / Entity::m_dollarCost.at(a.getCurrency()); // to $
+        total += currentBalance;
+    }
+    return total;
+}

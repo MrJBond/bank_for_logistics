@@ -177,7 +177,10 @@ color: rgb(255, 255, 255);</string>
     <property name="title">
      <string>Charts</string>
     </property>
-    <addaction name="actionChart"/>
+    <addaction name="actionTransactionsChart"/>
+    <addaction name="actionTotal_currencyChart"/>
+    <addaction name="actionIncome_Expenses"/>
+    <addaction name="actionBalance_History"/>
    </widget>
    <widget class="QMenu" name="menuChat">
     <property name="title">
@@ -437,9 +440,9 @@ amount of account balances</string>
     <string>Add the loan amount to the account</string>
    </property>
   </action>
-  <action name="actionChart">
+  <action name="actionTransactionsChart">
    <property name="text">
-    <string>Chart</string>
+    <string>Transactions</string>
    </property>
    <property name="font">
     <font/>
@@ -463,6 +466,21 @@ amount of account balances</string>
   <action name="actionWho_am_I">
    <property name="text">
     <string>Who am I</string>
+   </property>
+  </action>
+  <action name="actionTotal_currencyChart">
+   <property name="text">
+    <string>Total currency</string>
+   </property>
+  </action>
+  <action name="actionIncome_Expenses">
+   <property name="text">
+    <string>Income/Expenses</string>
+   </property>
+  </action>
+  <action name="actionBalance_History">
+   <property name="text">
+    <string>Balance History</string>
    </property>
   </action>
  </widget>

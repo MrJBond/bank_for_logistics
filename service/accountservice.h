@@ -23,6 +23,7 @@ public:
     void getClientLoanAccountView(QTextBrowser* browser) const;
     void updateAmountOnTransactions();
     void addLoanToAccount(int id_account, double amount);
+    void currencyChart(const int w, const int h) const;
 };
 
 #endif // ACCOUNTSERVICE_H

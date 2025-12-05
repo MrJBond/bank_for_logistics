@@ -9,7 +9,26 @@ AbstractService::AbstractService(QObject *parent)
 }
 AbstractService::~AbstractService(){}
 
-
+bool AbstractService::isPresent(const int id, AbstractRepository* repo) const{
+    std::vector<std::shared_ptr<Entity>> all = repo->getAll();
+    // check id
+    bool isPresent = false;
+    for(const auto& ent : all){
+        if(ent->getId() == id){
+            isPresent = true;
+            break;
+        }
+    }
+    return isPresent;
+}
+void AbstractService::deleteHelper(const int id, AbstractRepository* repo){
+    bool isPresentObj = isPresent(id, repo);
+    if(!isPresentObj){
+        const QString message = QString("Delete: There is no such object with id = ") + QString::number(id);
+        throw std::invalid_argument(message.toStdString());
+    }
+    repo->remove(id);
+}
 std::string AbstractService::getFileName() const{
     return m_fileName;
 }

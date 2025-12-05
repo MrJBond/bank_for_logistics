@@ -14,12 +14,12 @@ private:
 public:
     AccountService();
     ~AccountService() = default;
-    void getAllAccounts(QTextBrowser* browser, QTableWidget *table = nullptr) const;
+    void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     int insertAccount(int id_client, double amount,
                        QString currency);
     void updateAccount(int id, int id_client, double amount,
                        QString currency);
-    void deleteAccount(int id);
+    void deleteObj(const int id) override;
     void getClientLoanAccountView(QTextBrowser* browser) const;
     void updateAmountOnTransactions();
     void addLoanToAccount(int id_account, double amount);

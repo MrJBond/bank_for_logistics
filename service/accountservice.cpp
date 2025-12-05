@@ -3,7 +3,7 @@
 AccountService::AccountService() {
     m_client_repo = std::make_shared<ClientRepository>(ClientRepository());
 }
-void AccountService::getAllAccounts(QTextBrowser* browser, QTableWidget *table)const{
+void AccountService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_account_repo->getAll();
     if(table != nullptr){
         table->setColumnCount(4);
@@ -32,7 +32,7 @@ void AccountService::getAllAccounts(QTextBrowser* browser, QTableWidget *table)c
 
 int AccountService::insertAccount(int id_client, double amount, QString currency){
     std::shared_ptr<Account> acc = std::make_shared<Account>();
-    bool isClient = isPresent<Client>(id_client, [&](){return m_client_repo->getAll();});
+    bool isClient = isPresent(id_client, m_client_repo.get());
     bool ok = true;
     try{
         acc->setAmount(amount);
@@ -52,19 +52,15 @@ int AccountService::insertAccount(int id_client, double amount, QString currency
 
 void AccountService::updateAccount(int id, int id_client, double amount,
                    QString currency){
-    if(!isPresent<Client>(id_client, [&](){return m_client_repo->getAll();})){
+    if(!isPresent(id_client, m_client_repo.get())){
         throw std::invalid_argument("Update: There is no such client!");
     }
     // this may throw
     auto account = std::make_shared<Account>(id, id_client, amount, currency);
     m_account_repo->update(account);
 }
-void AccountService::deleteAccount(int id){
-    bool isPresentA = isPresent<Account>(id, [&](){return m_account_repo->getAll();});
-    if(!isPresentA){
-        throw std::invalid_argument("Delete: There is no such account!");
-    }
-    m_account_repo->remove(id);
+void AccountService::deleteObj(const int id){
+    deleteHelper(id, m_account_repo.get());
 }
 void AccountService::getClientLoanAccountView(QTextBrowser* browser) const{
     if(browser == nullptr){
@@ -85,7 +81,7 @@ void AccountService::updateAmountOnTransactions(){
     m_account_repo->updateAmountOnTransactions();
 }
 void AccountService::addLoanToAccount(int id_account, double amount){
-    if(!isPresent<Account>(id_account, [&](){return m_account_repo->getAll();})){
+    if(!isPresent(id_account, m_account_repo.get())){
        throw std::invalid_argument("AddLoanToAccount: There is no such account!");
     }
     if(amount  < 0){

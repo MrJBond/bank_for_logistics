@@ -12,13 +12,14 @@ private:
 public:
     TransactionService();
     ~TransactionService() = default;
-    void getAllTransactions(QTextBrowser* browser, QTableWidget *table = nullptr) const;
+    void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     int insertTransaction(QDate date, double amount,
                            int id_account, int id_accountTo);
     void updateTransaction(int id, QDate date, double amount,
                            int id_account, int id_accountTo);
-    void deleteTransaction(int id);
+    void deleteObj(const int id) override;
     void getTransactionView(QTextBrowser* browser) const;
+    void makeTransaction(const int id_account, const int id_accountTo, const double amount);
     // charts
     void buildTransactionsChart(const int w, const int h) const;
 };

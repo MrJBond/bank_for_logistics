@@ -23,7 +23,7 @@ ClientService::ClientService() {
     connect(m_loanRecommender, &LoanRecommender::recommendationReady,
             this, &ClientService::handleRecommendation);
 }
-void ClientService::getAllClients(QTextBrowser* browser, QTableWidget *table)const{
+void ClientService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_client_repo->getAll();
     if(table != nullptr){
         table->setColumnCount(7);
@@ -317,12 +317,8 @@ void ClientService::updateClient(int id, QString name, QString address, QString 
                                            accountantPhone.toStdString());
     m_client_repo->update(client);
 }
-void ClientService::deleteClient(int id){
-    bool isPresentC = isPresent<Client>(id, [&](){return m_client_repo->getAll();});
-    if(!isPresentC){
-        throw std::invalid_argument("Delete: There is no such client!");
-    }
-    m_client_repo->remove(id);
+void ClientService::deleteObj(const int id){
+    deleteHelper(id, m_client_repo.get());
 }
 void ClientService::getClientsLegalIndividual(QTextBrowser* browser) const{
     const auto res = m_client_repo->getClientsLegalOrIndividual();
@@ -359,7 +355,7 @@ void ClientService::getDirectorView(QTextBrowser* browser) const{
     }
 }
 bool ClientService::isClientPresent(const int id) {
-    return isPresent<Client>(id, [&](){return m_client_repo->getAll();});
+    return isPresent(id, m_client_repo.get());
 }
 /****************************************************
      *                      AI Lab2
@@ -518,6 +514,7 @@ void ClientService::handleRecommendation(double score, double averageMonthlyInco
         reply = QString("Great news! You have a strong financial profile.");
     }
     emit chatReplyString(reply);
+    setupHealthScoreChart(score);
 }
 
 // --- SURVEY [Bot's asses_risk feature]
@@ -723,4 +720,70 @@ void ClientService::balanceHistoryChart(const int w, const int h) const{
     QChart *chart = new QChart();
     QChartView* chartView = setChartAndAxisProperties(chart, series, "Balance History (Last 12 Months)", categories);
     createChartBox(chartView, w, h);
+}
+void ClientService::setupHealthScoreChart(const double score) const{
+    // 1. Create the Series
+    QPieSeries *series = new QPieSeries();
+    series->setHoleSize(0.65); // Makes it a Donut (0.0 = Pie, 1.0 = Empty ring)
+
+    // 2. Prepare the Data Slices
+    // Slice 1: The actual score
+    QPieSlice *sliceScore = series->append("Score", score);
+
+    // Slice 2: The "empty" part (100 - score)
+    QPieSlice *sliceRemainder = series->append("Remainder", 100.0 - score);
+
+    // 3. Style the "Score" Slice
+    sliceScore->setLabelVisible(false); // We will put a custom label in the center instead
+    sliceScore->setBorderColor(Qt::transparent); // Remove ugly border lines
+
+    // Dynamic Color Logic based on the score
+    if (score >= 80) {
+        sliceScore->setColor(QColor("#2ecc71")); // Green (Excellent)
+    } else if (score >= 50) {
+        sliceScore->setColor(QColor("#f1c40f")); // Yellow (Fair)
+    } else {
+        sliceScore->setColor(QColor("#e74c3c")); // Red (Poor)
+    }
+
+    // 4. Style the "Remainder" Slice
+    sliceRemainder->setColor(QColor("#ecf0f1")); // Light Gray
+    sliceRemainder->setBorderColor(Qt::transparent);
+    sliceRemainder->setLabelVisible(false);
+
+    // 5. Create and Configure the Chart
+    QChart *chart = new QChart();
+    QStringList categories;
+    QChartView* chartView = setChartAndAxisProperties(chart, series, "Score chart", categories);
+
+    // ---------------------------------------------------------
+    //  Add the Number in the Center
+    // ---------------------------------------------------------
+    // QCharts doesn't have a native "center label", so we add a QLabel
+    // on top of the view. We need to position it manually.
+
+   // Check if we already created a label previously (to avoid duplicates)
+    QLabel *scoreLabel = chartView->findChild<QLabel*>("centerLabel");
+    if (!scoreLabel) {
+        scoreLabel = new QLabel(chartView);
+        scoreLabel->setObjectName("centerLabel");
+        scoreLabel->setAlignment(Qt::AlignCenter);
+
+        // Make it look nice
+        QFont font;
+        font.setPixelSize(30);
+        font.setBold(true);
+        scoreLabel->setFont(font);
+    }
+
+    // Set text
+    scoreLabel->setText(QString::number(score, 'f', 0) + "%");
+
+    // Center the label (This needs to happen when the chart resizes,
+    // but for now we set it initially).
+    scoreLabel->resize(100, 50);
+    scoreLabel->move((chartView->width() - scoreLabel->width()) / 2,
+                     (chartView->height() - scoreLabel->height()) / 2);
+    scoreLabel->show();
+    createChartBox(chartView, 700, 500);
 }

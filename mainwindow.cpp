@@ -227,13 +227,15 @@ std::vector<QLineEdit*> MainWindow::createLineEdits(std::vector<QString> names,
     }
     return edits;
 }
-std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString title, std::vector<QString> names){
+std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString title, std::vector<QString> names, AbstractService* service){
     std::unordered_map<QString, QString> res;
     QDialog dlg(this);
     QFormLayout *layout = new QFormLayout();
     createDialogBox(title, dlg, layout);
 
     std::vector<QLineEdit*> lineEdits = createLineEdits(names, dlg, layout);
+    if(service)
+        showTable(dlg, layout, service);
     if(dlg.exec() == QDialog::Accepted) {
         for(size_t i = 0; i<lineEdits.size(); ++i){
             res[names[i]] = lineEdits[i]->text();
@@ -241,54 +243,65 @@ std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString titl
     }
     return res;
 }
+QTableWidget* MainWindow::buildTable(QDialog& dlg, const QString& title, AbstractService* service){
+     dlg.resize(900, 700);
+     QFormLayout *layout = new QFormLayout();
+     createDialogBox(title, dlg, layout);
+    QTableWidget *table = new QTableWidget(&dlg);
+    layout->addWidget(table);
+    try{
+        service->getAll(ui->console, table);
+        return table;
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    return nullptr;
+}
+void MainWindow::showTable(QDialog& dlg, QFormLayout *layout, AbstractService* service){
+    QTableWidget *table = new QTableWidget(&dlg);
+    layout->addWidget(table);
+    try{
+        service->getAll(ui->console, table);
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    if(table){
+        const int rows = table->rowCount();
+        const int columns = table->columnCount();
+        for(int i = 0; i<rows; ++i)
+            for(int j = 0; j<columns; ++j)
+                table->item(i,j)->setFlags(table->item(i,j)->flags() & ~Qt::ItemIsEditable);
+    }
+}
 /***********************************************
                     SHOW
  *************************************************/
+void MainWindow::showHelper(AbstractService* service){
+    ui->console->clear();
+    try{
+        service->getAll(ui->console);
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+}
 void MainWindow::on_actionShowClients_triggered()
 {
-    ui->console->clear();
-    try{
-        m_client_service->getAllClients(ui->console);
-    }catch(const std::runtime_error& e){
-        createMessageBox(e.what());
-        qDebug() << e.what();
-    }
+    showHelper(m_client_service.get());
 }
-
-
 void MainWindow::on_actionShowAccounts_triggered()
 {
-    ui->console->clear();
-    try{
-        m_account_service->getAllAccounts(ui->console);
-    }catch(const std::runtime_error& e){
-        createMessageBox(e.what());
-        qDebug() << e.what();
-    }
+    showHelper(m_account_service.get());
 }
-
-
 void MainWindow::on_actionShowTransactions_triggered()
 {
-    ui->console->clear();
-    try{
-        m_transaction_service->getAllTransactions(ui->console);
-    }catch(const std::runtime_error& e){
-        createMessageBox(e.what());
-        qDebug() << e.what();
-    }
+    showHelper(m_transaction_service.get());
 }
-
-
 void MainWindow::on_actionShowLoans_triggered()
 {
-    ui->console->clear();
-    try{
-        m_loan_service->getAllLoans(ui->console);
-    }catch(const std::runtime_error& e){
-        createMessageBox(e.what());
-        qDebug() << e.what();
-    }
+    showHelper(m_loan_service.get());
 }
 /***********************************************
                     FUNCTIONS
@@ -357,7 +370,7 @@ void MainWindow::on_actionUpdate_account_amounts_depending_on_the_transactions_t
 }
 void MainWindow::on_actionAdd_the_amount_loan_to_the_account_triggered(){
     std::vector<QString> names = {"Id Account", "Loan Amount"};
-    std::unordered_map<QString, QString> dlg = createDialogInsert("Add loan amount", names);
+    std::unordered_map<QString, QString> dlg = createDialogInsert("Add loan amount", names,  m_account_service.get());
     if(dlg.size() != 0)
     try{
         m_account_service->addLoanToAccount(dlg["Id Account"].toInt(), dlg["Loan Amount"].toDouble());
@@ -529,42 +542,34 @@ void MainWindow::on_actionInsert_Loan_triggered(){
 /*************************************************************
                         UPDATE
 **************************************************************/
-void MainWindow::updateHelper(QString title,
-                  std::function<void(QTextBrowser* browser, QTableWidget *table)> getAll,
+void MainWindow::updateHelper(const QString& title,
+                  AbstractService* service,
                   std::function<void(QVector<QString> data)> update){
     QDialog dlg(this);
-    dlg.resize(900, 700);
-    QFormLayout *layout = new QFormLayout();
-    createDialogBox(title, dlg, layout);
-    QTableWidget *table = new QTableWidget(&dlg);
-    layout->addWidget(table);
-    try{
-        getAll(ui->console, table);
-    }catch(const std::runtime_error& e){
-        createMessageBox(e.what());
-        qDebug() << e.what();
-    }
-    // work with table
-    if(dlg.exec() == QDialog::Accepted) {
-        int col = table->columnCount();
-        size_t row = table->rowCount();
-        for(size_t i = 0; i<row; ++i){
-            QVector<QString> object;
-            for(int j = 0; j<col; ++j){
-                object.push_back(table->item(i,j)->text());
-            }
-            try{
-                update(object);
-            }catch(const std::invalid_argument& e){
-                createMessageBox(e.what());
-                qDebug() << e.what();
-            }
-            catch(const std::runtime_error& e){
-                createMessageBox(e.what());
-                qDebug() << e.what();
+    QTableWidget *table = buildTable(dlg, title, service);
+     if(table){
+        // work with table
+        if(dlg.exec() == QDialog::Accepted) {
+            int col = table->columnCount();
+            size_t row = table->rowCount();
+            for(size_t i = 0; i<row; ++i){
+                QVector<QString> object;
+                for(int j = 0; j<col; ++j){
+                    object.push_back(table->item(i,j)->text());
+                }
+                try{
+                    update(object);
+                }catch(const std::invalid_argument& e){
+                    createMessageBox(e.what());
+                    qDebug() << e.what();
+                }
+                catch(const std::runtime_error& e){
+                    createMessageBox(e.what());
+                    qDebug() << e.what();
+                }
             }
         }
-    }
+     }
 }
 void MainWindow::updateClient(QVector<QString> object){
     // this may throw (will be caught in updateHelper)
@@ -602,37 +607,38 @@ void MainWindow::updateLoan(QVector<QString> object){
 }
 void MainWindow::on_actionUpdate_Client_triggered(){
     updateHelper("Update Client",
-                 [&](QTextBrowser* browser, QTableWidget *table){m_client_service->getAllClients(browser, table);},
+                 m_client_service.get(),
                  [&](QVector<QString> object){updateClient(object);});
 }
 void MainWindow::on_actionUpdate_Account_triggered(){
     updateHelper("Update Account",
-                 [&](QTextBrowser* browser, QTableWidget *table){m_account_service->getAllAccounts(browser, table);},
+                 m_account_service.get(),
                  [&](QVector<QString> object){updateAccount(object);});
 }
 void MainWindow::on_actionUpdate_Transaction_triggered(){
     updateHelper("Update Transaction",
-                 [&](QTextBrowser* browser, QTableWidget *table){m_transaction_service->getAllTransactions(browser, table);},
+                 m_transaction_service.get(),
                  [&](QVector<QString> object){updateTransaction(object);});
 }
 void MainWindow::on_actionUpdate_Loan_triggered(){
     updateHelper("Update Loan",
-                 [&](QTextBrowser* browser, QTableWidget *table){m_loan_service->getAllLoans(browser, table);},
+                 m_loan_service.get(),
                  [&](QVector<QString> object){updateLoan(object);});
 }
 /*************************************************************
                         DELETE
 **************************************************************/
-void MainWindow::deleteHelper(QString table_name, std::function<void(int)> del){
+void MainWindow::deleteHelper(QString table_name, AbstractService* service){
     QDialog dlg(this);
     QFormLayout *layout = new QFormLayout();
     createDialogBox("Delete " + table_name, dlg, layout);
 
     std::vector<QString> names = {"Delete (id)"};
     std::vector<QLineEdit*> lineEdits = createLineEdits(names, dlg, layout);
+    showTable(dlg, layout, service);
     if(dlg.exec() == QDialog::Accepted) {
         try{
-            del(lineEdits[0]->text().toInt());
+            service->deleteObj(lineEdits[0]->text().toInt());
         }catch(const std::invalid_argument& e){
             createMessageBox(e.what());
             qDebug() << e.what();
@@ -644,16 +650,16 @@ void MainWindow::deleteHelper(QString table_name, std::function<void(int)> del){
     }
 }
 void MainWindow::on_actionDelete_Client_triggered(){
-    deleteHelper("Client", [&](int id){m_client_service->deleteClient(id);});
+    deleteHelper("Client", m_client_service.get());
 }
 void MainWindow::on_actionDelete_Account_triggered(){
-    deleteHelper("Account", [&](int id){m_account_service->deleteAccount(id);});
+    deleteHelper("Account", m_account_service.get());
 }
 void MainWindow::on_actionDelete_Transaction_triggered(){
-    deleteHelper("Transaction", [&](int id){m_transaction_service->deleteTransaction(id);});
+    deleteHelper("Transaction", m_transaction_service.get());
 }
 void MainWindow::on_actionDelete_Loan_triggered(){
-    deleteHelper("Loan", [&](int id){m_loan_service->deleteLoan(id);});
+    deleteHelper("Loan", m_loan_service.get());
 }
 /*************************************************************
                         VIEWS

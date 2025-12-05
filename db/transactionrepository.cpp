@@ -8,7 +8,7 @@ TransactionRepository::~TransactionRepository(){}
 std::vector<std::shared_ptr<Entity>> TransactionRepository::getAll() const {
     std::vector<std::shared_ptr<Entity>> res;
     QSqlQuery query;
-    if(!query.exec("SELECT * FROM \"Transaction\"")){
+    if(!query.exec("SELECT * FROM \"Transaction\" ORDER BY id_transaction")){
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     while(query.next()){

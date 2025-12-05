@@ -7,7 +7,7 @@ ClientRepository::~ClientRepository(){}
 std::vector<std::shared_ptr<Entity>> ClientRepository::getAll() const {
     std::vector<std::shared_ptr<Entity>> res;
     QSqlQuery query;
-    if(!query.exec("SELECT * FROM \"Client\"")){
+    if(!query.exec("SELECT * FROM \"Client\" ORDER BY id_client")){
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     while(query.next()){

@@ -7,7 +7,7 @@ AccountRepository::~AccountRepository() {}
 std::vector<std::shared_ptr<Entity>> AccountRepository::getAll() const {
     std::vector<std::shared_ptr<Entity>> res;
     QSqlQuery query;
-    if(!query.exec("SELECT * FROM \"Account\"")){
+    if(!query.exec("SELECT * FROM \"Account\" ORDER BY id_account")){
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     while(query.next()){

@@ -122,13 +122,15 @@ private:
     void resetLoginDialog();
     void connectLoginDialog();
     void createMessageBox(const char* message);
+    QTableWidget* buildTable(QDialog& dlg, const QString& title, AbstractService* service);
+    void showTable(QDialog& dlg, QFormLayout *layout, AbstractService* service);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);
     void createDialogBox(QString title, QDialog& dlg, QFormLayout *layout);
-    std::unordered_map<QString, QString> createDialogInsert(QString title, std::vector<QString> names);
-    void updateHelper(QString title,
-                      std::function<void(QTextBrowser* browser, QTableWidget *table)> getAll,
+    std::unordered_map<QString, QString> createDialogInsert(QString title, std::vector<QString> names, AbstractService* service = nullptr);
+    void showHelper(AbstractService* service);
+    void updateHelper(const QString& title, AbstractService* service,
                       std::function<void(QVector<QString> data)> update);
-    void deleteHelper(QString table_name, std::function<void(int)> del);
+    void deleteHelper(QString table_name, AbstractService* service);
     void updateClient(QVector<QString> object);
     void updateAccount(QVector<QString> object);
     void updateTransaction(QVector<QString> object);

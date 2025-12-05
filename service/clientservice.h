@@ -45,6 +45,7 @@ private:
     MonthlyData getMonthlyIncomeExpenses(const int clientId, const QDate& startDate) const;
     QLineSeries* fetchBalanceHistory(const int id_client, QStringList& categories) const;
 
+    void setupHealthScoreChart(const double score) const;
 public:
     ClientService();
     ~ClientService(){
@@ -57,7 +58,7 @@ public:
             m_chatBot = nullptr;
         }
     };
-    void getAllClients(QTextBrowser* browser, QTableWidget *table = nullptr) const;
+    void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     void getClientsWithTotalSum(QTextBrowser* browser) const;
     void getClientsLegalIndividual(QTextBrowser* browser) const;
     void getLegalClientsWithTotalSum(QTextBrowser* browser) const;
@@ -73,7 +74,7 @@ public:
     void updateClient(int id, QString name, QString address, QString bossName,
                       QString bossPhone, QString accountantName,
                       QString accountantPhone);
-    void deleteClient(int id);
+    void deleteObj(const int id) override;
     void getDirectorView(QTextBrowser* browser) const;
 
     bool isClientPresent(const int id);

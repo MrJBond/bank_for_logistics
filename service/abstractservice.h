@@ -19,6 +19,7 @@
 #include <QToolTip>
 #include <QDialog>
 #include <QVBoxLayout>
+#include <QLabel>
 #include <map>
 #include "auth/usersession.h"
 
@@ -34,32 +35,20 @@ protected:
     // pointer by reference to modify the pointer itself
     bool buildReport(QMainWindow* window, QtRPT*& report) const;
 
-    template<class T>
-    bool isPresent(const int id, std::function<std::vector<std::shared_ptr<Entity>>()> getAll) const{
-        std::vector<std::shared_ptr<Entity>> all = getAll();
-        // check id
-        bool isPresent = false;
-        for(const auto& ent : all){
-            if(T* obj = dynamic_cast<T*>(ent.get()); obj != nullptr){
-                if(obj->getId() == id){
-                    isPresent = true;
-                    break;
-                }
-            }
-        }
-        return isPresent;
-    }
     int getCurYear() const;
-
+    bool isPresent(const int id, AbstractRepository* repo) const;
     // charts
     void setChartProperties(QChart* chart, const QString& title) const;
     QChartView* setChartAndAxisProperties(QChart* chart, QAbstractSeries* series, const QString& title, const QStringList& categories) const;
     QChartView* createBarChart(QBarSet* barSet, const QString& title, const QStringList& categories, std::function<QString(int)> toolTipText) const;
     void setBarSetProperties(QBarSet* barSet, std::function<QString(int)> toolTipText) const;
     void createChartBox(QChartView* chartView, const int w, const int h) const;
+    void deleteHelper(const int id, AbstractRepository* repo);
 public:
     explicit AbstractService(QObject *parent = nullptr);
     virtual ~AbstractService();
+    virtual void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const = 0;
+    virtual void deleteObj(const int id) = 0;
     std::string getFileName() const; // for the report
     void setFileName(const std::string name); // for the report
     // pass the function pointer to put the data into the columns of the report

@@ -8,7 +8,7 @@ LoanRepository::~LoanRepository(){}
 std::vector<std::shared_ptr<Entity>> LoanRepository::getAll() const {
     std::vector<std::shared_ptr<Entity>> res;
     QSqlQuery query;
-    if(!query.exec("SELECT * FROM \"Loan\"")){
+    if(!query.exec("SELECT * FROM \"Loan\" ORDER BY id_loan")){
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     while(query.next()){

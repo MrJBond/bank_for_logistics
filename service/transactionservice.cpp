@@ -4,7 +4,7 @@
 TransactionService::TransactionService() {
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
 }
-void TransactionService::getAllTransactions(QTextBrowser* browser, QTableWidget *table)const{
+void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
     if(table != nullptr){
         table->setColumnCount(5);
@@ -37,8 +37,8 @@ int TransactionService::insertTransaction(QDate date, double amount,
     std::vector<std::shared_ptr<Entity>> accounts = m_account_repo->getAll();
 
     // check id
-    bool isAccount = isPresent<Account>(id_account, [&](){return m_account_repo->getAll();});
-    bool isAccountTo = isPresent<Account>(id_accountTo, [&](){return m_account_repo->getAll();});
+    bool isAccount = isPresent(id_account, m_account_repo.get());
+    bool isAccountTo = isPresent(id_accountTo, m_account_repo.get());
     bool ok = true;
     try{
         tran->setAmount(amount);
@@ -59,22 +59,18 @@ int TransactionService::insertTransaction(QDate date, double amount,
 void TransactionService::updateTransaction(int id, QDate date, double amount,
                        int id_account, int id_accountTo){
     // check id
-    if(!isPresent<Account>(id_account, [&](){return m_account_repo->getAll();})){
+    if(!isPresent(id_account, m_account_repo.get())){
         throw std::invalid_argument("Update: There is no source account!");
     }
-    if(!isPresent<Account>(id_accountTo, [&](){return m_account_repo->getAll();})){
+    if(!isPresent(id_accountTo, m_account_repo.get())){
         throw std::invalid_argument("Update: There is no destination account!");
     }
     // this may throw
     auto tran = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
     m_transaction_repo->update(tran);
 }
-void TransactionService::deleteTransaction(int id){
-    bool isPresentT = isPresent<Transaction>(id, [&](){return m_transaction_repo->getAll();});
-    if(!isPresentT){
-        throw std::invalid_argument("Delete: There is no such transaction!");
-    }
-    m_transaction_repo->remove(id);
+void TransactionService::deleteObj(const int id){
+    deleteHelper(id, m_transaction_repo.get());
 }
 void TransactionService::getTransactionView(QTextBrowser* browser) const{
     if(browser == nullptr){
@@ -111,4 +107,8 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
     };
     QChartView* barChart = createBarChart(barSet, "Account Transactions", categories, toolTipText);
     createChartBox(barChart, w, h);
+}
+
+void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount){
+
 }

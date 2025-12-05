@@ -14,7 +14,7 @@ private:
 public:
     LoanService();
     ~LoanService() = default;
-    void getAllLoans(QTextBrowser* browser, QTableWidget *table = nullptr) const;
+    void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     void loanReportWithAllLoans(QMainWindow* window) const;
     int insertLoan(int id_account, QDate issue_date,
                     QDate usage_date,double percent,
@@ -22,7 +22,7 @@ public:
     void updateLoan(int id, int id_account, QDate issue_date,
                     QDate usage_date,double percent,
                     double amount);
-    void deleteLoan(int id);
+    void deleteObj(const int id) override;
     void getTotalEarnedMoney(QTextBrowser* browser) const;
     void getIndividualLoans(QTextBrowser* browser) const;
     void getAverageLegalLoans(QTextBrowser* browser) const;

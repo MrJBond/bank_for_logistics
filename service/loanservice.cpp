@@ -4,7 +4,7 @@
 LoanService::LoanService() {
     m_loan_repo = std::make_shared<LoanRepository>(LoanRepository());
 }
-void LoanService::getAllLoans(QTextBrowser* browser, QTableWidget *table)const{
+void LoanService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_loan_repo->getAll();
     if(table != nullptr){
         table->setColumnCount(6);
@@ -79,7 +79,7 @@ int LoanService::insertLoan(int id_account, QDate issue_date,
                 QDate usage_date,double percent,
                 double amount){
     std::shared_ptr<Loan> loan = std::make_shared<Loan>();
-    bool isAccount = isPresent<Account>(id_account, [&](){return m_account_repo->getAll();});
+    bool isAccount = isPresent(id_account, m_account_repo.get());
     bool ok = true;
     try{
         loan->setAmount(amount);
@@ -101,19 +101,15 @@ int LoanService::insertLoan(int id_account, QDate issue_date,
 void LoanService::updateLoan(int id, int id_account, QDate issue_date,
                 QDate usage_date,double percent,
                 double amount){
-    if(!isPresent<Account>(id_account, [&](){return m_account_repo->getAll();})){
+    if(!isPresent(id_account, m_account_repo.get())){
         throw std::invalid_argument("Update: There is no such account!");
     }
     // this may throw
     auto loan = std::make_shared<Loan>(id, id_account, issue_date, usage_date, percent, amount);
     m_loan_repo->update(loan);
 }
-void LoanService::deleteLoan(int id){
-    bool isPresentL = isPresent<Loan>(id, [&](){return m_loan_repo->getAll();});
-    if(!isPresentL){
-        throw std::invalid_argument("Delete: There is no such loan!");
-    }
-    m_loan_repo->remove(id);
+void LoanService::deleteObj(const int id){
+    deleteHelper(id, m_loan_repo.get());
 }
 void LoanService::getTotalEarnedMoney(QTextBrowser* browser) const{
     if(browser == nullptr){

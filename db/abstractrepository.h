@@ -17,6 +17,7 @@ public:
     virtual void insert(std::shared_ptr<Entity> entity) = 0;
     virtual void update(std::shared_ptr<Entity> entity) = 0;
     virtual void remove(int id) = 0;
+    virtual std::shared_ptr<Entity> getById(const int id) const = 0;
 };
 
 #endif // ABSTRACTREPOSITORY_H

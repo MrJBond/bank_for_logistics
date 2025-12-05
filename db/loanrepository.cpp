@@ -28,6 +28,30 @@ std::vector<std::shared_ptr<Entity>> LoanRepository::getAll() const {
     return res;
 }
 
+std::shared_ptr<Entity> LoanRepository::getById(const int id) const{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM \"Loan\" WHERE id_loan = :id");
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    if(query.next()){
+        int id = query.value(0).toInt();
+        int id_account = query.value(1).toInt();
+        QDate issue_date = query.value(2).toDate();
+        QDate usage_date = query.value(3).toDate();
+        double percent = query.value(4).toDouble();
+        double amount = query.value(5).toDouble();
+        try{
+            auto loan = std::make_shared<Loan>(id, id_account, issue_date, usage_date, percent, amount);
+            return loan;
+        }catch(const std::invalid_argument& e){
+            qDebug() << e.what();
+        }
+    }
+    return nullptr; // not found
+}
+
 void LoanRepository::insert(std::shared_ptr<Entity> entity) {
     if(entity == nullptr){
         return;

@@ -58,6 +58,7 @@ private slots:
     void on_actionUpdate_account_amounts_depending_on_the_transactions_triggered();
     void on_actionAdd_the_amount_loan_to_the_account_triggered();
     void on_actionRecommend_loan_amount_triggered();
+    void on_actionMake_transaction_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();

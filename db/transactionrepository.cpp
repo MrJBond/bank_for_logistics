@@ -26,6 +26,30 @@ std::vector<std::shared_ptr<Entity>> TransactionRepository::getAll() const {
     }
     return res;
 }
+
+std::shared_ptr<Entity> TransactionRepository::getById(const int id) const{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM \"Transaction\" WHERE id_transaction = :id");
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    if(query.next()){
+        int id = query.value(0).toInt();
+        QDate date = query.value(1).toDate();
+        double amount = query.value(2).toDouble();
+        int id_account = query.value(3).toInt();
+        int id_accountTo = query.value(4).toInt();
+        try{
+            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
+            return transact;
+        }catch(const std::invalid_argument& e){
+            qDebug() << e.what();
+        }
+    }
+    return nullptr; // not found
+}
+
 void TransactionRepository::insert(std::shared_ptr<Entity> entity) {
     if(entity == nullptr){
         return;

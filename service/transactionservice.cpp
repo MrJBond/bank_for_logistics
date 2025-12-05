@@ -109,6 +109,81 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
     createChartBox(barChart, w, h);
 }
 
-void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount){
+void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount) {
+    const int id = m_session->getUserId();
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
+    if(id_account == id_accountTo){
+        throw std::runtime_error("It doesn't make sense to send money to the same account!");
+    }
+    bool isAccount = isPresent(id_account, m_account_repo.get());
+    bool isAccountTo = isPresent(id_accountTo, m_account_repo.get());
+    if(!isAccount || !isAccountTo)
+        throw std::runtime_error("The accounts aren't present!");
+    if(!ClientRepository::isAccountMine(id, id_account)){
+        throw std::runtime_error("The account isn't yours!");
+    }
+    QSqlDatabase *db = DbConnector::getInstance()->getDb();
+    if(!db)
+        throw std::runtime_error("The db is null");
+    // 1. START TRANSACTION
+    if (!db->transaction())
+        throw std::runtime_error("Failed to start database transaction: " + db->lastError().text().toStdString());
+    try {
+        // 2. Validation: Amounts must be positive
+        if (amount <= 0) {
+            throw std::invalid_argument("Transaction amount must be positive.");
+        }
 
+        // 3. Fetch Accounts
+        std::shared_ptr<Account> aFrom = std::dynamic_pointer_cast<Account>(m_account_repo->getById(id_account));
+        std::shared_ptr<Account> aTo = std::dynamic_pointer_cast<Account>(m_account_repo->getById(id_accountTo));
+        if (!aFrom || !aTo) {
+            throw std::invalid_argument("Sender or Receiver account not found.");
+        }
+
+        // 4. Check Balance
+        if (aFrom->getAmount() < amount) {
+            throw std::runtime_error("Insufficient funds in sender account.");
+        }
+
+        // 5. Calculate Conversion
+        // Logic: Convert Sender Currency -> USD -> Receiver Currency
+        const double rateFrom = Entity::m_dollarCost.at(aFrom->getCurrency());
+        const double rateTo = Entity::m_dollarCost.at(aTo->getCurrency());
+
+        // Value in USD
+        const double amountInUSD = amount / rateFrom;
+        // Value in Target Currency
+        const double amountFinal = amountInUSD * rateTo;
+
+        // 6. Update Balances
+        // Subtract from Sender
+        aFrom->setAmount(aFrom->getAmount() - amount);
+        // Add to Receiver
+        aTo->setAmount(aTo->getAmount() + amountFinal);
+
+        // 7. Push Updates to DB
+        m_account_repo->update(aFrom);
+        m_account_repo->update(aTo);
+
+        // 8. Create History Record
+        // We do this LAST to ensure the math worked first
+        insertTransaction(QDate::currentDate(), amount, id_account, id_accountTo);
+
+        // 9. COMMIT TRANSACTION
+        if (!db->commit()) {
+            throw std::runtime_error("Failed to commit transaction: " + db->lastError().text().toStdString());
+        }
+
+    } catch (const std::exception& e) {
+        // 10. ROLLBACK ON FAILURE
+        // If anything above failed (insufficient funds, db error), undo everything.
+        db->rollback();
+        qCritical() << "Transaction failed, rolling back:" << e.what();
+        throw; // Re-throw to let the UI know
+    }
 }
+

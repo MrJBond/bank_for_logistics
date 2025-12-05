@@ -4,6 +4,27 @@
 AccountRepository::AccountRepository() {}
 AccountRepository::~AccountRepository() {}
 
+std::shared_ptr<Entity> AccountRepository::getById(const int id) const{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM \"Account\" WHERE id_account = :id");
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    if(query.next()){
+        int id = query.value(0).toInt();
+        double amount = query.value(1).toDouble();
+        QString currency = query.value(2).toString();
+        int id_client = query.value(3).toInt();
+        try{
+            auto account = std::make_shared<Account>(id, id_client, amount, currency);
+            return account;
+        }catch(const std::invalid_argument& e){
+            qDebug() << e.what();
+        }
+    }
+    return nullptr; // not found
+}
 std::vector<std::shared_ptr<Entity>> AccountRepository::getAll() const {
     std::vector<std::shared_ptr<Entity>> res;
     QSqlQuery query;

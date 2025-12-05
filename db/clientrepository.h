@@ -23,6 +23,7 @@ public:
     ClientRepository();
     ~ClientRepository();
     std::vector<std::shared_ptr<Entity>> getAll() const override;
+    std::shared_ptr<Entity> getById(const int id) const override;
     void insert(std::shared_ptr<Entity> entity) override;
     void update(std::shared_ptr<Entity> entity) override;
     void remove(int id) override;
@@ -31,9 +32,9 @@ public:
     std::vector<ClientWithTotal> getLegalClientsWithTotalSum(const int curYear) const;
 
     // Nested report => clients + their accounts + total money
-    std::vector<Account> getAccountsForClient(const int id_client) const;
+    static std::vector<Account> getAccountsForClient(const int id_client);
     std::vector<directorView> getDirectorView() const;
-    bool isAccountMine(const int id_client, const int id_account) const;
+    static bool isAccountMine(const int id_client, const int id_account);
     double getTotalCurrentBalance(const int id_client) const; // $
     /****************************************************
      *                      AI Lab2

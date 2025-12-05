@@ -384,6 +384,26 @@ void MainWindow::on_actionAdd_the_amount_loan_to_the_account_triggered(){
         qDebug() << e.what();
     }
 }
+void MainWindow::on_actionMake_transaction_triggered(){
+    std::vector<QString> names = {"Source Account Id", "Destination Account Id", "Amount"};
+    std::unordered_map<QString, QString> dlg = createDialogInsert("Make a transaction", names,  m_account_service.get());
+    if(dlg.size() != 0){
+        try{
+            m_transaction_service->makeTransaction(dlg["Source Account Id"].toInt(),
+                                                   dlg["Destination Account Id"].toInt(),
+                                                   dlg["Amount"].toDouble());
+        }catch(const std::runtime_error& e){
+            createMessageBox(e.what());
+            qDebug() << e.what();
+        }
+        catch(const std::invalid_argument& e){
+            createMessageBox(e.what());
+            qDebug() << e.what();
+        }catch(...){
+            createMessageBox("Transaction failed!");
+        }
+    }
+}
 /***********************************************
                     REPORTS
  *************************************************/

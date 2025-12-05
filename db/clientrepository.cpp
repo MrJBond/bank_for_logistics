@@ -29,6 +29,32 @@ std::vector<std::shared_ptr<Entity>> ClientRepository::getAll() const {
     return res;
 }
 
+std::shared_ptr<Entity> ClientRepository::getById(const int id) const{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM \"Client\" WHERE id_client = :id");
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    if(query.next()){
+        int id = query.value(0).toInt();
+        std::string name = query.value(1).toString().toStdString();
+        std::string address = query.value(2).toString().toStdString();
+        std::string bossName = query.value(3).toString().toStdString();
+        std::string bossPhone = query.value(4).toString().toStdString();
+        std::string accountantName = query.value(5).toString().toStdString();
+        std::string accountantPhone = query.value(6).toString().toStdString();
+        try{
+            auto client = std::make_shared<Client>(id, address, name, bossName,
+                                                   bossPhone, accountantName, accountantPhone);
+            return client;
+        }catch(const std::invalid_argument& e){
+            qDebug() << e.what();
+        }
+    }
+    return nullptr; // not found
+}
+
 std::vector<ClientRepository::ClientWithTotal> ClientRepository::getClientsWithTotalSum() const{
     // Отримати список юридичних осіб, упорядкований за сумарними
     // обсягами платежів, вироблених з початку поточного року.
@@ -66,7 +92,7 @@ std::vector<ClientRepository::ClientWithTotal> ClientRepository::getClientsWithT
     return res;
 }
 
-std::vector<Account> ClientRepository::getAccountsForClient(const int id_client) const{
+std::vector<Account> ClientRepository::getAccountsForClient(const int id_client){
     if(id_client <= 0){
         throw std::invalid_argument("The client's id is invalid!");
     }
@@ -325,8 +351,7 @@ double ClientRepository::existingDebtLoad(const int id_client) const{
     }
     return totalLoan;
 }
-
-bool ClientRepository::isAccountMine(const int id_client, const int id_account) const{
+bool ClientRepository::isAccountMine(const int id_client, const int id_account){
     const std::vector<Account> accs = getAccountsForClient(id_client);
     for(const Account& a : accs)
         if(a.getId() == id_account)

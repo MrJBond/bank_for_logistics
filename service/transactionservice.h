@@ -2,6 +2,7 @@
 #define TRANSACTIONSERVICE_H
 
 #include "db/transactionrepository.h"
+#include "db/clientrepository.h"
 #include "qtextbrowser.h"
 #include "service/abstractservice.h"
 

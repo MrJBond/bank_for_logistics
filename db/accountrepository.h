@@ -22,6 +22,7 @@ public:
     void updateAmountOnTransactions();
     // using the SQL transaction
     void addLoanToAccount(int id_account, double amount);
+    std::shared_ptr<Entity> getById(const int id) const override;
 };
 
 #endif // ACCOUNTREPOSITORY_H

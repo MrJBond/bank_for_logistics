@@ -120,6 +120,7 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionUpdate_account_amounts_depending_on_the_transactions"/>
     <addaction name="actionAdd_the_amount_loan_to_the_account"/>
     <addaction name="actionRecommend_loan_amount"/>
+    <addaction name="actionMake_transaction"/>
    </widget>
    <widget class="QMenu" name="menuInsert">
     <property name="font">
@@ -481,6 +482,11 @@ amount of account balances</string>
   <action name="actionBalance_History">
    <property name="text">
     <string>Balance History</string>
+   </property>
+  </action>
+  <action name="actionMake_transaction">
+   <property name="text">
+    <string>Make transaction</string>
    </property>
   </action>
  </widget>

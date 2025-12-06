@@ -11,7 +11,7 @@ private:
     QString m_currency = DOLLAR;
 public:
     Account() = default;
-    Account(int id, int id_client, double amount, QString currency);
+    Account(const int id, const int id_client, const double amount, const QString& currency);
     ~Account();
     QString getCurrency() const;
     int getClientId() const;

@@ -34,9 +34,6 @@ void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const
 int TransactionService::insertTransaction(QDate date, double amount,
                                            int id_account, int id_accountTo){
     std::shared_ptr<Transaction> tran = std::make_shared<Transaction>();
-    std::vector<std::shared_ptr<Entity>> accounts = m_account_repo->getAll();
-
-    // check id
     bool isAccount = isPresent(id_account, m_account_repo.get());
     bool isAccountTo = isPresent(id_accountTo, m_account_repo.get());
     bool ok = true;
@@ -115,6 +112,9 @@ void TransactionService::makeTransaction(const int id_account, const int id_acco
         const QString message = "User's id is invalid! id = " + QString::number(id);
         throw std::runtime_error(message.toStdString());
     }
+    if(id_account == 0 || id_accountTo == 0){
+        throw std::runtime_error("There is no account with id = 0");
+    }
     if(id_account == id_accountTo){
         throw std::runtime_error("It doesn't make sense to send money to the same account!");
     }
@@ -151,13 +151,10 @@ void TransactionService::makeTransaction(const int id_account, const int id_acco
 
         // 5. Calculate Conversion
         // Logic: Convert Sender Currency -> USD -> Receiver Currency
-        const double rateFrom = Entity::m_dollarCost.at(aFrom->getCurrency());
-        const double rateTo = Entity::m_dollarCost.at(aTo->getCurrency());
-
         // Value in USD
-        const double amountInUSD = amount / rateFrom;
+        const double amountInUSD = Entity::toDollar(amount, aFrom->getCurrency());
         // Value in Target Currency
-        const double amountFinal = amountInUSD * rateTo;
+        const double amountFinal = Entity::fromDollar(amountInUSD, aTo->getCurrency());
 
         // 6. Update Balances
         // Subtract from Sender

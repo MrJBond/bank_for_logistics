@@ -12,7 +12,7 @@ private:
     int m_id_accountTo = 0;
 public:
     Transaction() = default;
-    Transaction(int id, QDate date, double amount, int id_account, int id_accountTo);
+    Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo);
     ~Transaction() = default;
     double getAmount() const;
     QDate getDate() const;

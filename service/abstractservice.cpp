@@ -10,15 +10,9 @@ AbstractService::AbstractService(QObject *parent)
 AbstractService::~AbstractService(){}
 
 bool AbstractService::isPresent(const int id, AbstractRepository* repo) const{
-    std::vector<std::shared_ptr<Entity>> all = repo->getAll();
-    // check id
     bool isPresent = false;
-    for(const auto& ent : all){
-        if(ent->getId() == id){
-            isPresent = true;
-            break;
-        }
-    }
+    auto e = repo->getById(id);
+     if(e) isPresent = true;
     return isPresent;
 }
 void AbstractService::deleteHelper(const int id, AbstractRepository* repo){

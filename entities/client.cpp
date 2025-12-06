@@ -1,8 +1,8 @@
 #include "client.h"
 
-Client::Client(int id, std::string address, std::string name,
-               std::string bossName, std::string bossPhone,
-               std::string accountantName, std::string accountantPhone):
+Client::Client(const int id, const std::string& address, const std::string& name,
+               const std::string& bossName, const std::string& bossPhone,
+               const std::string& accountantName, const std::string& accountantPhone):
     Entity(id),
     m_address(address), m_bossName(bossName), m_bossPhone(bossPhone),
     m_accountantName(accountantName), m_accountantPhone(accountantPhone){

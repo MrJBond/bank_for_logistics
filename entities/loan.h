@@ -13,7 +13,7 @@ private:
     double m_amount = 0.;
 
     // Helper method to validate the date constraint
-    void validateDates()
+    inline void validateDates()
     {
         // Only validate if both dates are set
         if (m_issue_date.isValid() && m_usage_date.isValid())
@@ -25,7 +25,7 @@ private:
         }
     }
 public:
-    Loan(int id, int id_account, QDate issue_date, QDate usage_date, double percent, double amount);
+    Loan(const int id, const int id_account, const QDate& issue_date, const QDate& usage_date, const double percent, const double amount);
     Loan() = default;
     ~Loan() = default;
 

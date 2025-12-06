@@ -147,18 +147,7 @@ void ClientService::putDataClientsAccountsReport(QtRPT* report, QMainWindow* win
 
             std::vector<Account> accs = m_client_repo->getAccountsForClient(client->getId());
             std::for_each(accs.begin(), accs.end(), [&](const Account& a){
-                if(a.getCurrency() == QString(EURO)){
-                    totalAccountAmount += a.getAmount()*1.06;
-                }
-                else if(a.getCurrency() == QString(POUND)){
-                    totalAccountAmount += a.getAmount()*1.27;
-                }
-                else if(a.getCurrency() == QString(HRYVNA)){
-                    totalAccountAmount += a.getAmount()*0.024;
-                }
-                else{
-                    totalAccountAmount += a.getAmount();
-                }
+                    totalAccountAmount += Entity::toDollar(a.getAmount(), a.getCurrency());
             });
             // put the accs into subreports (creating the reports)
             // build the subreport
@@ -456,7 +445,7 @@ void ClientService::handleChatReply(const QString& intent, const QString& reply)
 
                 double total = 0;
                 for(auto& acc : balance)
-                    total += acc.getAmount() / Entity::m_dollarCost.at(acc.getCurrency()); // to $
+                    total += Entity::toDollar(acc.getAmount(), acc.getCurrency());
                 // Smart Follow-up
                 if (total > 50000)
                     emit chatReplyString("💡 You have a significant balance! You should consider opening a high-interest savings account.");
@@ -624,8 +613,8 @@ ClientService::MonthlyData ClientService::getMonthlyIncomeExpenses(const int cli
         // sum all accounts, taking the currency into consideration
         const QList keys = accResult.keys();
         for(const QString& month : keys){
-            totalResult[month].first += accResult[month].first / Entity::m_dollarCost.at(a.getCurrency()); // to $
-            totalResult[month].second += accResult[month].second / Entity::m_dollarCost.at(a.getCurrency()); // to $
+            totalResult[month].first += Entity::toDollar(accResult[month].first, a.getCurrency());
+            totalResult[month].second += Entity::toDollar(accResult[month].second, a.getCurrency());
         }
     }
     return totalResult;

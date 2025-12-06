@@ -14,9 +14,9 @@ private:
     std::string m_accountantPhone = "";
 public:
     Client() = default;
-    Client(int id, std::string address, std::string name,
-           std::string bossName, std::string bossPhone,
-        std::string accountantName, std::string accountantPhone);
+    Client(const int id, const std::string& address, const std::string& name,
+           const std::string& bossName, const std::string& bossPhone,
+        const std::string& accountantName, const std::string& accountantPhone);
     ~Client() = default;
 
     std::string getName() const;

@@ -1,38 +1,13 @@
 #include "loan.h"
 
-Loan::Loan(int id, int id_account, QDate issue_date, QDate usage_date, double percent, double amount):
+Loan::Loan(const int id, const int id_account, const QDate& issue_date, const QDate& usage_date, const double percent, const double amount):
     Entity(id)
 {
-    if(id_account <= 0){
-        throw std::invalid_argument("The account id is invalid!");
-    }
-    m_id_account = id_account;
-
-    if(issue_date.isNull()){
-        std::chrono::year_month_day today = // default
-            std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
-        m_issue_date = QDate(int(today.year()), unsigned(today.month()), unsigned(today.day()));
-    }else{
-        m_issue_date = issue_date;
-    }
-
-    if(usage_date.isNull()){
-        std::chrono::year_month_day today = // default
-            std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now());
-        m_usage_date = QDate(int(today.year()), unsigned(today.month()), unsigned(today.day()));
-    }else{
-        m_usage_date = usage_date;
-    }
-    validateDates();
-    if(percent < 0 || percent > 100){
-        throw std::invalid_argument("The percent is invalid!");
-    }
-    m_percent = percent;
-
-    if(amount < 0){
-        throw std::invalid_argument("The amount is invalid!");
-    }
-    m_amount = amount;
+    setId_account(id_account);
+    setIssue_date(issue_date);
+    setUsage_date(usage_date);
+    setPercent(percent);
+    setAmount(amount);
 }
 
 int Loan::getId_account() const{

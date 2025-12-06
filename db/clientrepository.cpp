@@ -270,7 +270,7 @@ double ClientRepository::averageMonthlyIncome(const int id_client) const{
     // sum up taking the currency into consideration
     double sum = 0.;
     for(const auto& e : res){
-        sum += (e.average_transaction_amount / Entity::m_dollarCost.at(e.currency)); // to $
+        sum += Entity::toDollar(e.average_transaction_amount, e.currency);
     }
     return sum;
 }
@@ -323,7 +323,7 @@ double ClientRepository::incomeVolatility(const int id_client) const{
     // get an average of all accounts' stddevs
     double average = 0;
     for(const auto& a : res)
-        average += (a.second.account_stddev_of_monthly_flow / Entity::m_dollarCost.at(a.second.currency)); // to $
+        average += Entity::toDollar(a.second.account_stddev_of_monthly_flow, a.second.currency);
     return average/res.size();
 }
 double ClientRepository::existingDebtLoad(const int id_client) const{
@@ -347,7 +347,7 @@ double ClientRepository::existingDebtLoad(const int id_client) const{
     while(query.next()){
         const double sum = query.value(0).toDouble();
         const QString currency = query.value(1).toString();
-        totalLoan += (sum / Entity::m_dollarCost.at(currency)); // to $
+        totalLoan += Entity::toDollar(sum, currency);
     }
     return totalLoan;
 }
@@ -362,7 +362,7 @@ double ClientRepository::getTotalCurrentBalance(const int id_client) const{
     const std::vector<Account> accs = getAccountsForClient(id_client);
     double total = 0.;
     for(const Account& a : accs){
-        const double currentBalance = a.getAmount() / Entity::m_dollarCost.at(a.getCurrency()); // to $
+        const double currentBalance = Entity::toDollar(a.getAmount(), a.getCurrency());
         total += currentBalance;
     }
     return total;

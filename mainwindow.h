@@ -59,6 +59,7 @@ private slots:
     void on_actionAdd_the_amount_loan_to_the_account_triggered();
     void on_actionRecommend_loan_amount_triggered();
     void on_actionMake_transaction_triggered();
+    void on_actionTake_loan_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();
@@ -101,6 +102,7 @@ private slots:
     void handleFinalLoanAmount(double amount);
     void handleBalanceCheckResult(const std::vector<Account>& accounts);
     void handleTransactionListResult(const std::vector<Transaction>& transactions);
+    void handleLoanTakingResult(bool approved, const QString& msg);
 private:
     Ui::MainWindow *ui;
     DbConnector* m_db = nullptr;

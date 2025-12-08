@@ -87,7 +87,7 @@ public:
     /****************************************************
      *                      AI Lab2
     ****************************************************/
-    void recommendLoanAmount(const int id) const; // $
+    void recommendLoanAmount(const int id) const;// $
     // Call this when the user types a message [for the survey: asses_risk]
     void handleUserMessage(const QString& msg);
 signals:

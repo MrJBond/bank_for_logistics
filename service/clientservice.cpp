@@ -350,25 +350,7 @@ bool ClientService::isClientPresent(const int id) {
      *                      AI Lab2
 ****************************************************/
 void ClientService::recommendLoanAmount(const int id) const{
-    double avg_income = 0., stability_metric = 0., existing_debt = 0.;
-    if(id <= 0){
-        const QString message = "User's id is invalid! id = " + QString::number(id);
-        throw std::runtime_error(message.toStdString());
-    }
-    try{
-        avg_income = m_client_repo->averageMonthlyIncome(id);
-        stability_metric = m_client_repo->incomeVolatility(id);
-        existing_debt = m_client_repo->existingDebtLoad(id);
-    }catch(const std::runtime_error& e){
-        qDebug() << e.what();
-    }
-    catch(const std::invalid_argument& e){
-        qDebug() << e.what();
-    }
-    qDebug() << "avg_income: " << avg_income;
-    qDebug() << "stability_metric: " << stability_metric;
-    qDebug() << "existing_debt: " << existing_debt;
-    m_loanRecommender->requestLoanRecommendation(avg_income, stability_metric, existing_debt);
+    m_loanRecommender->recommendLoanAmount(id, m_client_repo.get());
 }
 std::vector<Transaction> ClientService::listTransactions(const int id_client) const{
     const std::vector<Account> accs = m_client_repo->getAccountsForClient(id_client); // might throw

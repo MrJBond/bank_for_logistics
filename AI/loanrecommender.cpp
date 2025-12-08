@@ -76,3 +76,25 @@ void LoanRecommender::handleRecommendation(double score, double averageMonthlyIn
         emit finalLoanAmountReady(qRound(suggestedLoanAmount));
     }
 }
+
+void LoanRecommender::recommendLoanAmount(const int id, ClientRepository* repo){
+    double avg_income = 0., stability_metric = 0., existing_debt = 0.;
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
+    try{
+        avg_income = repo->averageMonthlyIncome(id);
+        stability_metric = repo->incomeVolatility(id);
+        existing_debt = repo->existingDebtLoad(id);
+    }catch(const std::runtime_error& e){
+        qDebug() << e.what();
+    }
+    catch(const std::invalid_argument& e){
+        qDebug() << e.what();
+    }
+    qDebug() << "avg_income: " << avg_income;
+    qDebug() << "stability_metric: " << stability_metric;
+    qDebug() << "existing_debt: " << existing_debt;
+    requestLoanRecommendation(avg_income, stability_metric, existing_debt);
+}

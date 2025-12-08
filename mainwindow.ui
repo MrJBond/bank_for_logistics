@@ -121,6 +121,7 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionAdd_the_amount_loan_to_the_account"/>
     <addaction name="actionRecommend_loan_amount"/>
     <addaction name="actionMake_transaction"/>
+    <addaction name="actionTake_loan"/>
    </widget>
    <widget class="QMenu" name="menuInsert">
     <property name="font">
@@ -487,6 +488,11 @@ amount of account balances</string>
   <action name="actionMake_transaction">
    <property name="text">
     <string>Make transaction</string>
+   </property>
+  </action>
+  <action name="actionTake_loan">
+   <property name="text">
+    <string>Take loan</string>
    </property>
   </action>
  </widget>

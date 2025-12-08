@@ -3,6 +3,10 @@
 
 LoanService::LoanService() {
     m_loan_repo = std::make_shared<LoanRepository>(LoanRepository());
+    m_client_repo = std::make_shared<ClientRepository>(ClientRepository());
+    m_loanRecommender = std::make_unique<LoanRecommender>();
+    connect(m_loanRecommender.get(), &LoanRecommender::recommendationReady,
+            this, &LoanService::handleRecommendation);
 }
 void LoanService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_loan_repo->getAll();
@@ -176,4 +180,118 @@ void LoanService::getLoanView(QTextBrowser* browser) const{
     for(const Loan& loan : res){
         browser << loan;
     }
+}
+/*********************************************
+            Take a loan
+ *********************************************/
+
+// Helper to calculate rate based on the Fuzzy Logic Score
+double LoanService::calculateInterestRate(const double aiScore) const{
+    // Base rate 5%. Every point below 100 adds 0.15% interest.
+    // Max rate (at score 0) would be 20%.
+    const double rate = 5.0 + ((100.0 - aiScore) * 0.15);
+    return rate;
+}
+void LoanService::takeLoan(const int accountId, const double amount, const int durationMonths, const double aiScore) {
+    QSqlDatabase *db = DbConnector::getInstance()->getDb();
+    // 1. Start Transaction
+    // Taking a loan involves TWO steps: creating the loan record AND adding money to the account.
+    if (!db->transaction()) {
+        throw std::runtime_error("Failed to start database transaction.");
+    }
+    try {
+        // 2. Logic Calculations
+        const QDate issueDate = QDate::currentDate();
+        const QDate usageDate = issueDate.addMonths(durationMonths); // Calculates the end date
+        const double interestRate = calculateInterestRate(aiScore);
+        // 3. Insert Loan Record
+        const int loan = insertLoan(accountId, issueDate, usageDate, interestRate, amount);
+        // 4. Update Account Balance (Client receives the money)
+        auto acc = std::dynamic_pointer_cast<Account>(m_account_repo->getById(accountId));
+        const double currentBalance = acc->getAmount();
+        const double newBalance = currentBalance + amount;
+        acc->setAmount(newBalance);
+        m_account_repo->update(acc);
+        // 5. Commit Transaction
+        if (!db->commit()) {
+            throw std::runtime_error("Failed to commit transaction.");
+        }
+        qDebug() << "Loan approved! Amount:" << amount << " Rate:" << interestRate << "%";
+
+    } catch (const std::exception& e) {
+        db->rollback();
+        throw; // Re-throw so the UI can show an error message
+    }
+}
+void LoanService::requestLoan(const int accountId, const double amount, const int durationMonths){
+    const int id = m_session->getUserId();
+    if(id <= 0){
+        const QString message = "User's id is invalid! id = " + QString::number(id);
+        throw std::runtime_error(message.toStdString());
+    }
+    if(accountId <= 0){
+        throw std::runtime_error("The account is invalid!");
+    }
+    if(!isPresent(accountId, m_account_repo.get())){
+        throw std::runtime_error("There is no such account!");
+    }
+    if(!ClientRepository::isAccountMine(id, accountId)){
+        throw std::runtime_error("The account is not yours!");
+    }
+    if(amount <= 0){
+        throw std::runtime_error("The amount must be positive!");
+    }
+    if(durationMonths <= 0){
+        throw std::runtime_error("The duration must be positive!");
+    }
+
+    // 1. SAVE THE CONTEXT
+    // We store the parameters here so we can access them later
+    // when the AI replies.
+    m_pendingRequest.accountId = accountId;
+    m_pendingRequest.amount = amount;
+    m_pendingRequest.durationMonths = durationMonths;
+    m_pendingRequest.isValid = true;
+    qDebug() << "Loan Request Queued. Asking AI for approval...";
+    m_loanRecommender->recommendLoanAmount(id, m_client_repo.get());
+}
+void LoanService::handleRecommendation(double score, double averageMonthlyIncome){
+    // 1. Check if we actually have a pending request
+    if (!m_pendingRequest.isValid) {
+        qWarning() << "Received recommendation but no loan request was pending.";
+        return;
+    }
+    qDebug() << "AI Response Received. Score:" << score;
+
+    // 2. Apply Business Logic based on the AI result
+    // Calculate the maximum allowed loan based on the bank's rule (e.g. 3x income * score%)
+    double maxAllowedLoan = (averageMonthlyIncome * 3.0) * (score / 100.0);
+
+    // 3. Decision Time
+    if (score < 20.0) {
+        // AI Rejected (Score too low)
+        QString msg = "Loan rejected based on risk profile (Score: " + QString::number(score) + ")";
+        emit loanResult(false, msg);
+    }
+    else if (m_pendingRequest.amount > maxAllowedLoan) {
+        // AI Approved, but the user asked for too much money
+        QString msg = "Loan amount too high. Based on your score, we can only offer up to " + QString::number(maxAllowedLoan);
+        emit loanResult(false, msg);
+    }
+    else {
+        // 4. SUCCESS - Execute the stored request
+        try {
+            takeLoan(m_pendingRequest.accountId,
+                     m_pendingRequest.amount,
+                     m_pendingRequest.durationMonths,
+                     score); // Pass the score for interest rate calc
+
+            emit loanResult(true, "Loan successfully approved and deposited!");
+
+        } catch (const std::exception& e) {
+            emit loanResult(false, "System Error: " + QString(e.what()));
+        }
+    }
+    // 5. Cleanup
+    m_pendingRequest.isValid = false; // Reset the state
 }

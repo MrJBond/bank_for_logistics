@@ -3,13 +3,16 @@
 
 // This class will manage the network communication
 #include "AI/networkmanager.h"
+#include "db/clientrepository.h"
 
 class LoanRecommender : public NetworkManager
 {
     Q_OBJECT
+private:
+    void requestLoanRecommendation(double avg_income, double stability, double existing_debt);
 public:
     LoanRecommender();
-    void requestLoanRecommendation(double avg_income, double stability, double existing_debt);
+    void recommendLoanAmount(const int id, ClientRepository* repo);
 private slots:
     void handleRecommendation(double score, double averageMonthlyIncome);
 signals:

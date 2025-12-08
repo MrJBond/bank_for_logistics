@@ -40,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleBalanceCheckResult);
         connect(m_client_service.get(), &ClientService::transactionListResult,
                 this, &MainWindow::handleTransactionListResult);
+        connect(m_loan_service.get(), &LoanService::loanResult,
+                this, &MainWindow::handleLoanTakingResult);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -402,6 +404,24 @@ void MainWindow::on_actionMake_transaction_triggered(){
         }catch(...){
             createMessageBox("Transaction failed!");
         }
+    }
+}
+void MainWindow::on_actionTake_loan_triggered(){
+    try{
+
+        // TODO: impl UI
+
+
+        m_loan_service->requestLoan(32, 100, 2);
+    }catch(const std::runtime_error& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    catch(const std::invalid_argument& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }catch(...){
+        createMessageBox("Loan operation failed!");
     }
 }
 /***********************************************
@@ -945,4 +965,7 @@ void MainWindow::handleTransactionListResult(const std::vector<Transaction>& tra
     ui->console->clear();
     for(const Transaction& t : transactions)
         ui->console << t;
+}
+void MainWindow::handleLoanTakingResult(bool approved, const QString& msg){
+    createMessageBox(msg.toStdString().c_str());
 }

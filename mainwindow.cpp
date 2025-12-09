@@ -229,7 +229,7 @@ std::vector<QLineEdit*> MainWindow::createLineEdits(std::vector<QString> names,
     }
     return edits;
 }
-std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString title, std::vector<QString> names, AbstractService* service){
+std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString title, std::vector<QString> names, AbstractService* service, QList<ComboData>* boxes){
     std::unordered_map<QString, QString> res;
     QDialog dlg(this);
     QFormLayout *layout = new QFormLayout();
@@ -238,9 +238,19 @@ std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString titl
     std::vector<QLineEdit*> lineEdits = createLineEdits(names, dlg, layout);
     if(service)
         showTable(dlg, layout, service);
+    QList<QComboBox*> boxRes;
+    if(boxes)
+        boxRes = createComboBoxes(layout, *boxes);
     if(dlg.exec() == QDialog::Accepted) {
         for(size_t i = 0; i<lineEdits.size(); ++i){
             res[names[i]] = lineEdits[i]->text();
+        }
+        if(boxes){
+            for(int i = 0; i < boxes->size(); ++i){
+                const QString lable = (*boxes)[i].label;
+                const QString text = boxRes[i]->currentText();
+                res[lable] = text;
+            }
         }
     }
     return res;
@@ -276,6 +286,27 @@ void MainWindow::showTable(QDialog& dlg, QFormLayout *layout, AbstractService* s
             for(int j = 0; j<columns; ++j)
                 table->item(i,j)->setFlags(table->item(i,j)->flags() & ~Qt::ItemIsEditable);
     }
+}
+QList<QComboBox*> MainWindow::createComboBoxes(QFormLayout *layout, const QList<ComboData> &boxes) {
+    QList<QComboBox*> createdWidgets;
+    for(const auto& data : boxes){
+        QComboBox *box = new QComboBox();
+        box->addItems(data.options);
+        layout->addRow(data.label, box);
+        createdWidgets.append(box);
+    }
+    return createdWidgets;
+}
+QStringList MainWindow::getAccountsForUser(){
+    const int id = m_session->getUserId();
+    QStringList ids;
+        // throws
+    if(id != 0 && m_client_service->isClientPresent(id)){
+        auto accs = m_client_service->getAccountsForClient(id);
+        for(const auto& a : accs)
+            ids.push_back(QString::number(a.getId()));
+    }
+    return ids;
 }
 /***********************************************
                     SHOW
@@ -387,8 +418,11 @@ void MainWindow::on_actionAdd_the_amount_loan_to_the_account_triggered(){
     }
 }
 void MainWindow::on_actionMake_transaction_triggered(){
-    std::vector<QString> names = {"Source Account Id", "Destination Account Id", "Amount"};
-    std::unordered_map<QString, QString> dlg = createDialogInsert("Make a transaction", names,  m_account_service.get());
+    std::vector<QString> names = {"Destination Account Id", "Amount"};
+    QList<ComboData> comboData;
+    comboData.push_back({"Source Account Id", getAccountsForUser()});
+    std::unordered_map<QString, QString> dlg = createDialogInsert("Make a transaction",
+                                                                  names,  m_account_service.get(), &comboData);
     if(dlg.size() != 0){
         try{
             m_transaction_service->makeTransaction(dlg["Source Account Id"].toInt(),
@@ -408,11 +442,15 @@ void MainWindow::on_actionMake_transaction_triggered(){
 }
 void MainWindow::on_actionTake_loan_triggered(){
     try{
-
-        // TODO: impl UI
-
-
-        m_loan_service->requestLoan(32, 100, 2);
+        std::vector<QString> names = {"Amount"};
+        QList<ComboData> comboData;
+        comboData.push_back({"Account Id", getAccountsForUser()});
+        comboData.push_back({"Duration (Months)", {"12", "24", "48", "60", "120"}});
+        std::unordered_map<QString, QString> res = createDialogInsert("Take loan", names, nullptr, &comboData);
+        if(res.size() != 0)
+            m_loan_service->requestLoan(res["Account Id"].toInt(),
+                                        res["Amount"].toDouble(),
+                                        res["Duration (Months)"].toInt());
     }catch(const std::runtime_error& e){
         createMessageBox(e.what());
         qDebug() << e.what();

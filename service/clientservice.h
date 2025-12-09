@@ -77,8 +77,8 @@ public:
     void deleteObj(const int id) override;
     void getDirectorView(QTextBrowser* browser) const;
 
-    bool isClientPresent(const int id);
-
+    bool isClientPresent(const int id) const;
+    std::vector<Account> getAccountsForClient(const int id_client) const;
     /*****************************************************
                             CHARTS
      *****************************************************/

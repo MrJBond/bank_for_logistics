@@ -129,7 +129,13 @@ private:
     void showTable(QDialog& dlg, QFormLayout *layout, AbstractService* service);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);
     void createDialogBox(QString title, QDialog& dlg, QFormLayout *layout);
-    std::unordered_map<QString, QString> createDialogInsert(QString title, std::vector<QString> names, AbstractService* service = nullptr);
+    struct ComboData {
+        QString label;
+        QStringList options;
+    };
+    QList<QComboBox*> createComboBoxes(QFormLayout *layout, const QList<ComboData> &boxes);
+    QStringList getAccountsForUser();
+    std::unordered_map<QString, QString> createDialogInsert(QString title, std::vector<QString> names, AbstractService* service = nullptr, QList<ComboData>* boxes = nullptr);
     void showHelper(AbstractService* service);
     void updateHelper(const QString& title, AbstractService* service,
                       std::function<void(QVector<QString> data)> update);

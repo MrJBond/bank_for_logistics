@@ -343,8 +343,11 @@ void ClientService::getDirectorView(QTextBrowser* browser) const{
                         + ent.currency + "\n");
     }
 }
-bool ClientService::isClientPresent(const int id) {
-    return isPresent(id, m_client_repo.get());
+bool ClientService::isClientPresent(const int id) const{
+    return isPresent(id, m_client_repo.get()); // throws
+}
+std::vector<Account> ClientService::getAccountsForClient(const int id_client) const{
+    return m_client_repo->getAccountsForClient(id_client); // thows
 }
 /****************************************************
      *                      AI Lab2

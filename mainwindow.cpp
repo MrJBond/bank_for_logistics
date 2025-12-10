@@ -247,9 +247,9 @@ std::unordered_map<QString, QString> MainWindow::createDialogInsert(QString titl
         }
         if(boxes){
             for(int i = 0; i < boxes->size(); ++i){
-                const QString lable = (*boxes)[i].label;
+                const QString label = (*boxes)[i].label;
                 const QString text = boxRes[i]->currentText();
-                res[lable] = text;
+                res[label] = text;
             }
         }
     }

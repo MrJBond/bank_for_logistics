@@ -761,3 +761,65 @@ void ClientService::setupHealthScoreChart(const double score) const{
     scoreLabel->show();
     createChartBox(chartView, 700, 500);
 }
+/************************************************************
+                FACE LOG IN
+ *************************************************************/
+// Helper: Euclidean Distance
+double calculateDistance(const std::vector<double>& v1, const std::vector<double>& v2) {
+    if (v1.size() != v2.size()) return 100.0; // Error
+
+    double sum = 0.0;
+    for (size_t i = 0; i < v1.size(); ++i) {
+        double diff = v1[i] - v2[i];
+        sum += (diff * diff);
+    }
+    return std::sqrt(sum);
+}
+bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const{
+    // 1. Parse the vector
+    QJsonDocument doc = QJsonDocument::fromJson(currentFaceVectorJson.toUtf8());
+    QJsonArray arr = doc.array();
+    std::vector<double> currentVector;
+    for(auto val : arr) currentVector.push_back(val.toDouble());
+
+    // 2. Fetch ALL users' face vectors from DB
+    std::vector<std::pair<int, QString>> faces;
+    try{
+        faces = m_client_repo->getFaces();
+    }catch(const std::runtime_error& e){
+        qDebug() << e.what();
+        return false;
+    }
+    for(const auto& f : faces){
+        const int id = f.first;
+        const QString dbJson = f.second;
+
+        // Parse DB vector
+        QJsonDocument dbDoc = QJsonDocument::fromJson(dbJson.toUtf8());
+        QJsonArray dbArr = dbDoc.array();
+        std::vector<double> dbVector;
+        for(auto val : dbArr) dbVector.push_back(val.toDouble());
+
+        // 3. Compare!
+        // 0.6 is the standard threshold for "Same Person"
+        double dist = calculateDistance(currentVector, dbVector);
+
+        if (dist < 0.6) {
+            qDebug() << "Face Match Found! User ID:" << id << " Distance:" << dist;
+            std::shared_ptr<Client> client = nullptr;
+            try{
+                auto c = m_client_repo->getById(id);
+                c ? client = std::dynamic_pointer_cast<Client>(c) : client = nullptr;
+            }catch(const std::runtime_error& e){
+                qDebug() << e.what();
+                return false;
+            }
+            if(!client)
+                return false;
+            // LOGIN SUCCESSFUL
+            m_session->createSession(id, QString(client->getName().c_str()));
+            return true;
+        }
+    }
+    return false; // No match found
+}

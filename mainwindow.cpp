@@ -76,6 +76,7 @@ void MainWindow::buildLoginDialog(){
     m_userpasswordInput = new QLineEdit(&m_dlgLogin);
     m_userpasswordInput->setEchoMode(QLineEdit::Password);
     m_loginButton = new QPushButton("Log in", &m_dlgLogin);
+    m_loginWithFaceButton = new QPushButton("Log in With Face", &m_dlgLogin);
     m_signupButton = new QPushButton("Sign up", &m_dlgLogin);
     m_signupButton->setEnabled(false);
     m_userRadioButton = new QRadioButton("Login as a bank user");
@@ -89,6 +90,7 @@ void MainWindow::buildLoginDialog(){
     m_layoutLogin->addWidget(m_userpasswordLabel);
     m_layoutLogin->addWidget(m_userpasswordInput);
     m_layoutLogin->addWidget(m_loginButton);
+    m_layoutLogin->addWidget(m_loginWithFaceButton);
     m_layoutLogin->addWidget(m_signupButton);
 }
 void MainWindow::resetLoginDialog(){
@@ -107,6 +109,10 @@ void MainWindow::resetLoginDialog(){
     if(m_loginButton){
         delete m_loginButton;
         m_loginButton = nullptr;
+    }
+    if(m_loginWithFaceButton){
+        delete m_loginWithFaceButton;
+        m_loginWithFaceButton = nullptr;
     }
     if(m_signupButton){
         delete m_signupButton;
@@ -135,6 +141,7 @@ void MainWindow::disconnectLoginSignals(){
 }
 void MainWindow::connectLoginDialog(){
     connect(m_loginButton, &QPushButton::clicked, this, &MainWindow::attemptLoginDbUser);
+    connect(m_loginWithFaceButton, &QPushButton::clicked, this, &MainWindow::onLoginWithFaceClicked);
     m_signupButton->setEnabled(false);
     connect(m_dbUserRadioButton, &QRadioButton::toggled, this, [&](){
         m_signupButton->setEnabled(false);
@@ -203,6 +210,15 @@ void MainWindow::attemptSignupBankUser(){
         createUserSession(id, res["Client's name"]);
     };
     login(userLogin);
+}
+void MainWindow::onLoginWithFaceClicked(){
+    FaceCaptureDialog dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        QString base64Image = dlg.getCapturedImageBase64();
+        if(!m_client_service->verifyFaceLogin(base64Image)){
+            createMessageBox("Failed to log in!");
+        }
+    }
 }
 /***************************************************************
                     UI helper functions

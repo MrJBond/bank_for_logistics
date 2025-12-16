@@ -42,6 +42,10 @@ public:
     double averageMonthlyIncome(const int id_client) const;
     double incomeVolatility(const int id_client) const;
     double existingDebtLoad(const int id_client) const;
+    /**************************************************
+                        FACE LOG IN
+     ***************************************************/
+    std::vector<std::pair<int, QString>> getFaces() const;
 };
 
 #endif // CLIENTREPOSITORY_H

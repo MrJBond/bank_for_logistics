@@ -367,3 +367,21 @@ double ClientRepository::getTotalCurrentBalance(const int id_client) const{
     }
     return total;
 }
+/**************************************************
+                        FACE LOG IN
+***************************************************/
+std::vector<std::pair<int, QString>> ClientRepository::getFaces() const{
+    std::vector<std::pair<int, QString>> res;
+    // Fetch ALL users' face vectors from DB
+    QSqlQuery query;
+    QString sql = "SELECT id_client, face_encoding FROM public.\"ClientAuth\" WHERE face_encoding IS NOT NULL";
+    if(!query.exec(sql)){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    while(query.next()) {
+        const int id = query.value("id_client").toInt();
+        const QString dbJson = query.value("face_encoding").toString();
+        res.push_back(std::make_pair(id, dbJson));
+    }
+    return res;
+}

@@ -21,6 +21,7 @@
 #include "service/loanservice.h"
 #include "service/transactionservice.h"
 #include "auth/usersession.h"
+#include "CV/facecapturedialog.h"
 #include <QProcess>
 
 QT_BEGIN_NAMESPACE
@@ -40,6 +41,7 @@ private slots:
     void attemptLoginDbUser();
     void attemptLoginBankUser();
     void attemptSignupBankUser();
+    void onLoginWithFaceClicked();
     // show all
     void on_actionShowClients_triggered();
 
@@ -112,6 +114,7 @@ private:
     QLineEdit *m_usernameInput = nullptr;
     QLineEdit *m_userpasswordInput = nullptr;
     QPushButton *m_loginButton = nullptr;
+    QPushButton *m_loginWithFaceButton = nullptr;
     QPushButton *m_signupButton = nullptr;
     QRadioButton *m_userRadioButton = nullptr;
     QRadioButton *m_dbUserRadioButton = nullptr;

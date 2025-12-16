@@ -90,6 +90,10 @@ public:
     void recommendLoanAmount(const int id) const;// $
     // Call this when the user types a message [for the survey: asses_risk]
     void handleUserMessage(const QString& msg);
+    /********************************************************
+                        FACE LOG IN
+     **********************************************************/
+    bool verifyFaceLogin(const QString& currentFaceVectorJson) const;
 signals:
     // to notify the MainWindow
     void chatReplyString(const QString& reply);

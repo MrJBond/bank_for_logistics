@@ -1,6 +1,10 @@
+import face_recognition
 import numpy as np
 from flask import Flask, request, jsonify
 import joblib
+import base64
+import cv2
+import json
 
 # -------------------------------------------------------------------
 # SECTION 1: FUZZY LOGIC UTILITIES (Evaluator)
@@ -214,6 +218,27 @@ def recommend_loan():
         'inputs_received': data,
         'recommendation_score': round(score, 2)
     })
+
+#--------------------------------------------------------------------
+# ENDPOINT 3: PROCESS THE FACE VECTOR
+#--------------------------------------------------------------------
+
+@app.route('/get-face-vector', methods=['POST'])
+def get_face_vector():
+    data = request.get_json()
+    image_b64 = data.get('image')
+
+    # Convert Base64 to Image
+    img = base64_to_image(image_b64)
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Get encodings
+    encodings = face_recognition.face_encodings(rgb_img)
+
+    if len(encodings) > 0:
+        return jsonify({'success': True, 'vector': encodings[0].tolist()})
+    else:
+        return jsonify({'success': False, 'message': 'No face detected'})
 
 # -------------------------------------------------------------------
 # SECTION 6: RUN THE SERVER

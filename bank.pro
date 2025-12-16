@@ -1,5 +1,4 @@
-QT       += core  sql pdf charts
-
+QT       += core  sql pdf charts multimedia multimediawidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++20
@@ -13,6 +12,7 @@ SOURCES += \
     AI/chatbot.cpp \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
+    CV/facecapturedialog.cpp \
     auth/usersession.cpp \
     db/accountrepository.cpp \
     db/loanrepository.cpp \
@@ -37,6 +37,7 @@ HEADERS += \
     AI/chatbot.h \
     AI/loanrecommender.h \
     AI/networkmanager.h \
+    CV/facecapturedialog.h \
     auth/usersession.h \
     db/accountrepository.h \
     db/loanrepository.h \

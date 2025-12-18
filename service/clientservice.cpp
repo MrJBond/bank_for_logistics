@@ -5,6 +5,7 @@ ClientService::ClientService() {
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
     m_loanRecommender = new LoanRecommender();
     m_chatBot = new ChatBot();
+    m_faceIdService = new FaceIdService();
     connect(m_loanRecommender, &LoanRecommender::finalLoanAmountReady,
             this, &ClientService::handleFinalLoanAmount);
 
@@ -18,6 +19,12 @@ ClientService::ClientService() {
             this, &ClientService::handleChatReply);
 
     connect(m_chatBot, &ChatBot::networkError,
+            this, &ClientService::handleNetworkFailure);
+
+    connect(m_faceIdService, &FaceIdService::vectorCalculated,
+            this, &ClientService::handleUserFaceVector);
+
+    connect(m_faceIdService, &FaceIdService::networkError,
             this, &ClientService::handleNetworkFailure);
 
     connect(m_loanRecommender, &LoanRecommender::recommendationReady,
@@ -822,4 +829,10 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const{
         }
     }
     return false; // No match found
+}
+void ClientService::requestFaceVector(const QString& base64Image){
+    m_faceIdService->requestFaceVector(base64Image);
+}
+void ClientService::handleUserFaceVector(const QString& vectorJson){
+    emit faceScanned(vectorJson);
 }

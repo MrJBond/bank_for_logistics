@@ -13,6 +13,7 @@ SOURCES += \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
     CV/facecapturedialog.cpp \
+    auth/faceidservice.cpp \
     auth/usersession.cpp \
     db/accountrepository.cpp \
     db/loanrepository.cpp \
@@ -38,6 +39,7 @@ HEADERS += \
     AI/loanrecommender.h \
     AI/networkmanager.h \
     CV/facecapturedialog.h \
+    auth/faceidservice.h \
     auth/usersession.h \
     db/accountrepository.h \
     db/loanrepository.h \

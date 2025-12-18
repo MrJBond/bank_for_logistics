@@ -42,6 +42,7 @@ private slots:
     void attemptLoginBankUser();
     void attemptSignupBankUser();
     void onLoginWithFaceClicked();
+    void handleFaceScanned(const QString& faceVector);
     // show all
     void on_actionShowClients_triggered();
 

@@ -42,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleTransactionListResult);
         connect(m_loan_service.get(), &LoanService::loanResult,
                 this, &MainWindow::handleLoanTakingResult);
+        connect(m_client_service.get(), &ClientService::faceScanned,
+                this, &MainWindow::handleFaceScanned);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -208,6 +210,18 @@ void MainWindow::attemptSignupBankUser(){
                                                    res["Accountant's name"], res["Accountant's phone"]
                                                    ); // might throw std::runtime_error, it will be caught in login(...)
         createUserSession(id, res["Client's name"]);
+
+        // face detection
+        QDialog dlg(this);
+        QFormLayout *layout = new QFormLayout();
+        createDialogBox("Would you like to save your face to be able to log in by scanning it?", dlg, layout);
+        if(dlg.exec() == QDialog::Accepted) {
+            FaceCaptureDialog dlg(this);
+            if (dlg.exec() == QDialog::Accepted) {
+                QString base64Image = dlg.getCapturedImageBase64();
+                m_client_service->requestFaceVector(base64Image);
+            }
+        }
     };
     login(userLogin);
 }
@@ -219,6 +233,10 @@ void MainWindow::onLoginWithFaceClicked(){
             createMessageBox("Failed to log in!");
         }
     }
+}
+void MainWindow::handleFaceScanned(const QString& faceVector){
+    createMessageBox("Face scanned!");
+    m_client_service->saveUserFace(user id, faceVectror); // TODO
 }
 /***************************************************************
                     UI helper functions

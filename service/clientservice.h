@@ -7,6 +7,7 @@
 #include "service/abstractservice.h"
 #include "AI/loanrecommender.h"
 #include "AI/chatbot.h"
+#include "auth/faceidservice.h"
 
 class ClientService : public AbstractService
 {
@@ -23,6 +24,7 @@ private:
 
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
+    FaceIdService *m_faceIdService = nullptr;
 
     void sendToPythonBot(const QString& userText);
 
@@ -56,6 +58,10 @@ public:
         if(m_chatBot){
             delete m_chatBot;
             m_chatBot = nullptr;
+        }
+        if(m_faceIdService){
+            delete m_faceIdService;
+            m_faceIdService = nullptr;
         }
     };
     void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
@@ -94,6 +100,7 @@ public:
                         FACE LOG IN
      **********************************************************/
     bool verifyFaceLogin(const QString& currentFaceVectorJson) const;
+    void requestFaceVector(const QString& base64Image);
 signals:
     // to notify the MainWindow
     void chatReplyString(const QString& reply);
@@ -102,11 +109,13 @@ signals:
     void finalLoanAmount(double amount);
     void balanceCheckResult(const std::vector<Account>& accounts);
     void transactionListResult(const std::vector<Transaction>& transactions);
+    void faceScanned(const QString& faceVector);
  private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleLoanRejection();
     void handleFinalLoanAmount(double amount);
     void handleChatReply(const QString& intent, const QString& reply);
     void handleRecommendation(double score, double averageMonthlyIncome);
+    void handleUserFaceVector(const QString& vectorJson);
 };
 #endif // CLIENTSERVICE_H

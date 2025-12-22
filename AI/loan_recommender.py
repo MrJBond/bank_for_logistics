@@ -5,6 +5,8 @@ import joblib
 import base64
 import cv2
 import json
+from PIL import Image
+import io
 
 # -------------------------------------------------------------------
 # SECTION 1: FUZZY LOGIC UTILITIES (Evaluator)
@@ -222,23 +224,91 @@ def recommend_loan():
 #--------------------------------------------------------------------
 # ENDPOINT 3: PROCESS THE FACE VECTOR
 #--------------------------------------------------------------------
+def base64_to_image(base64_string):
+    if not base64_string:
+        return None
+    try:
+        # Remove data URL prefix if present
+        if ',' in base64_string:
+            print(f"Removing data URL prefix...")
+            base64_string = base64_string.split(',')[1]
+
+        # Decode base64
+        img_bytes = base64.b64decode(base64_string)
+        print(f"Decoded {len(img_bytes)} bytes")
+
+        # Open with PIL
+        pil_img = Image.open(io.BytesIO(img_bytes))
+        print(f"PIL image mode: {pil_img.mode}, size: {pil_img.size}")
+
+        # Convert to RGB (face_recognition needs RGB)
+        if pil_img.mode != 'RGB':
+            print(f"Converting from {pil_img.mode} to RGB")
+            pil_img = pil_img.convert('RGB')
+
+        # Convert to numpy array with explicit dtype
+        img_array = np.array(pil_img, dtype=np.uint8)
+
+        print(f"Final numpy array - shape: {img_array.shape}, dtype: {img_array.dtype}")
+
+        return img_array
+
+    except Exception as e:
+        print(f"Error decoding image: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 @app.route('/get-face-vector', methods=['POST'])
 def get_face_vector():
     data = request.get_json()
     image_b64 = data.get('image')
 
-    # Convert Base64 to Image
+    if not image_b64:
+        return jsonify({'success': False, 'message': 'No image data received'})
+
+    # Decode image
     img = base64_to_image(image_b64)
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Get encodings
-    encodings = face_recognition.face_encodings(rgb_img)
+    if img is None:
+        return jsonify({'success': False, 'message': 'Image decoding failed'})
 
-    if len(encodings) > 0:
-        return jsonify({'success': True, 'vector': encodings[0].tolist()})
-    else:
-        return jsonify({'success': False, 'message': 'No face detected'})
+    # CRITICAL DEBUG INFO
+    print(f"=== DEBUG INFO ===")
+    print(f"Image shape: {img.shape}")
+    print(f"Image dtype: {img.dtype}")
+    print(f"Image type: {type(img)}")
+    print(f"Is contiguous: {img.flags['C_CONTIGUOUS']}")
+    print(f"Min/Max values: {img.min()}, {img.max()}")
+
+    # Check if it's actually uint8 RGB
+    if img.dtype != np.uint8:
+        print(f"WARNING: dtype is {img.dtype}, converting to uint8")
+        img = img.astype(np.uint8)
+
+    if len(img.shape) != 3 or img.shape[2] != 3:
+        print(f"ERROR: Image is not 3-channel RGB! Shape: {img.shape}")
+        return jsonify({'success': False, 'message': f'Invalid image format: {img.shape}'})
+
+    # Make sure it's contiguous
+    if not img.flags['C_CONTIGUOUS']:
+        print("WARNING: Array not contiguous, fixing...")
+        img = np.ascontiguousarray(img)
+
+    try:
+        # Get face encodings
+        encodings = face_recognition.face_encodings(img)
+
+        if len(encodings) > 0:
+            return jsonify({'success': True, 'vector': encodings[0].tolist()})
+        else:
+            return jsonify({'success': False, 'message': 'No face detected'})
+
+    except Exception as e:
+        print(f"Face recognition error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Face processing error: {str(e)}'})
 
 # -------------------------------------------------------------------
 # SECTION 6: RUN THE SERVER

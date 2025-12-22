@@ -370,6 +370,23 @@ double ClientRepository::getTotalCurrentBalance(const int id_client) const{
 /**************************************************
                         FACE LOG IN
 ***************************************************/
+void ClientRepository::saveUserFace(const int id, const QString& vectorJson) const{
+    QSqlQuery queryAuth;
+    queryAuth.prepare(
+        "INSERT INTO public.\"ClientAuth\" (face_encoding) WHERE id_client = :id"
+        "VALUES (:faceVec)"
+        );
+    queryAuth.bindValue(":id", id);
+    if (vectorJson.isEmpty()) {
+        queryAuth.bindValue(":faceVec", QVariant(QVariant::String)); // Insert NULL
+    } else {
+        queryAuth.bindValue(":faceVec", vectorJson);
+    }
+
+    if (!queryAuth.exec()) {
+        throw std::runtime_error(queryAuth.lastError().text().toStdString());
+    }
+}
 std::vector<std::pair<int, QString>> ClientRepository::getFaces() const{
     std::vector<std::pair<int, QString>> res;
     // Fetch ALL users' face vectors from DB

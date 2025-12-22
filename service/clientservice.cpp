@@ -834,5 +834,10 @@ void ClientService::requestFaceVector(const QString& base64Image){
     m_faceIdService->requestFaceVector(base64Image);
 }
 void ClientService::handleUserFaceVector(const QString& vectorJson){
-    emit faceScanned(vectorJson);
+    // the session has already been created in MainWindow::attemptSignupBankUser
+    try{
+        m_client_repo->saveUserFace(m_session->getUserId(), vectorJson);
+    }catch(const std::runtime_error& e){
+        qDebug() << e.what();
+    }
 }

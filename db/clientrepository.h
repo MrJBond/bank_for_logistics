@@ -45,6 +45,7 @@ public:
     /**************************************************
                         FACE LOG IN
      ***************************************************/
+    void saveUserFace(const int id, const QString& vectorJson) const;
     std::vector<std::pair<int, QString>> getFaces() const;
 };
 

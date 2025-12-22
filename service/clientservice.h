@@ -109,7 +109,6 @@ signals:
     void finalLoanAmount(double amount);
     void balanceCheckResult(const std::vector<Account>& accounts);
     void transactionListResult(const std::vector<Transaction>& transactions);
-    void faceScanned(const QString& faceVector);
  private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleLoanRejection();

@@ -21,13 +21,13 @@ MainWindow::MainWindow(QWidget *parent)
         m_account_service = std::make_unique<AccountService>();
         m_transaction_service = std::make_unique<TransactionService>();
         m_loan_service = std::make_unique<LoanService>();
-
-        if(m_dlgLogin.exec() != QDialog::Accepted){
-            throw std::runtime_error("Failed to login!");
-        }
-
         m_pythonServerProcess = new QProcess(this);
         startPythonServer();
+
+        if(m_dlgLogin.exec() != QDialog::Accepted){
+            stopPythonServer();
+            throw std::runtime_error("Failed to login!");
+        }
         connect(m_client_service.get(), &ClientService::chatReplyString,
                 this, &MainWindow::handleChatBotReply);
         connect(m_client_service.get(), &ClientService::finalLoanAmount,
@@ -42,8 +42,6 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleTransactionListResult);
         connect(m_loan_service.get(), &LoanService::loanResult,
                 this, &MainWindow::handleLoanTakingResult);
-        connect(m_client_service.get(), &ClientService::faceScanned,
-                this, &MainWindow::handleFaceScanned);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -234,10 +232,7 @@ void MainWindow::onLoginWithFaceClicked(){
         }
     }
 }
-void MainWindow::handleFaceScanned(const QString& faceVector){
-    createMessageBox("Face scanned!");
-    m_client_service->saveUserFace(user id, faceVectror); // TODO
-}
+
 /***************************************************************
                     UI helper functions
  ***************************************************************/

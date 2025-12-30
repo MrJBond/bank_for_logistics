@@ -2,6 +2,9 @@
     <qresource prefix="/img">
         <file>img/black.png</file>
         <file>img/dollar.png</file>
+        <file>img/person1.jpg</file>
+        <file>img/person2.jpg</file>
+        <file>img/person3.jpg</file>
     </qresource>
     <qresource prefix="/reports">
         <file>reportsFiles/loanReport.xml</file>

@@ -773,7 +773,7 @@ void ClientService::setupHealthScoreChart(const double score) const{
  *************************************************************/
 // Helper: Euclidean Distance
 double calculateDistance(const std::vector<double>& v1, const std::vector<double>& v2) {
-    if (v1.size() != v2.size()) return 100.0; // Error
+    if (v1.size() != v2.size()) return 1000.0; // Mismatch error
 
     double sum = 0.0;
     for (size_t i = 0; i < v1.size(); ++i) {
@@ -782,8 +782,8 @@ double calculateDistance(const std::vector<double>& v1, const std::vector<double
     }
     return std::sqrt(sum);
 }
-bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const{
-    // 1. Parse the vector
+bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const {
+    // 1. Parse the Current User's Vector (from the login camera scan)
     QJsonDocument doc = QJsonDocument::fromJson(currentFaceVectorJson.toUtf8());
     QJsonArray arr = doc.array();
     std::vector<double> currentVector;
@@ -791,13 +791,18 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const{
 
     // 2. Fetch ALL users' face vectors from DB
     std::vector<std::pair<int, QString>> faces;
-    try{
+    try {
         faces = m_client_repo->getFaces();
-    }catch(const std::runtime_error& e){
+    } catch(const std::runtime_error& e) {
         qDebug() << e.what();
         return false;
     }
-    for(const auto& f : faces){
+
+    // 3. Compare with every user in the database
+    double bestDistance = 1000.0;
+    int bestMatchId = -1;
+
+    for(const auto& f : faces) {
         const int id = f.first;
         const QString dbJson = f.second;
 
@@ -807,37 +812,67 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const{
         std::vector<double> dbVector;
         for(auto val : dbArr) dbVector.push_back(val.toDouble());
 
-        // 3. Compare!
-        // 0.6 is the standard threshold for "Same Person"
+        // 4. Calculate Distance
         double dist = calculateDistance(currentVector, dbVector);
 
-        if (dist < 0.6) {
-            qDebug() << "Face Match Found! User ID:" << id << " Distance:" << dist;
-            std::shared_ptr<Client> client = nullptr;
-            try{
-                auto c = m_client_repo->getById(id);
-                c ? client = std::dynamic_pointer_cast<Client>(c) : client = nullptr;
-            }catch(const std::runtime_error& e){
-                qDebug() << e.what();
-                return false;
-            }
-            if(!client)
-                return false;
-            // LOGIN SUCCESSFUL
-            m_session->createSession(id, QString(client->getName().c_str()));
-            return true;
+        // Log it for debugging (CRITICAL to see what values you are getting)
+        qDebug() << "Comparing against User ID:" << id << " Distance:" << dist;
+
+        // Facenet L2 Threshold is usually around 10.0
+        // We track the BEST match, not just the first one under threshold
+        if (dist < 10.0 && dist < bestDistance) {
+            bestDistance = dist;
+            bestMatchId = id;
         }
     }
-    return false; // No match found
+
+    // 5. Final Decision
+    if (bestMatchId != -1) {
+        qDebug() << "Face Match Found! User ID:" << bestMatchId << " Best Distance:" << bestDistance;
+
+        std::shared_ptr<Client> client = nullptr;
+        try {
+            auto c = m_client_repo->getById(bestMatchId);
+            c ? client = std::dynamic_pointer_cast<Client>(c) : client = nullptr;
+        } catch(const std::runtime_error& e) {
+            qDebug() << e.what();
+            return false;
+        }
+
+        if(!client) return false;
+
+        // LOGIN SUCCESSFUL
+        m_session->createSession(bestMatchId, QString(client->getName().c_str()));
+        return true;
+    }
+
+    qDebug() << "Login Failed: No matching face found.";
+    return false;
 }
 void ClientService::requestFaceVector(const QString& base64Image){
     m_faceIdService->requestFaceVector(base64Image);
 }
 void ClientService::handleUserFaceVector(const QString& vectorJson){
-    // the session has already been created in MainWindow::attemptSignupBankUser
-    try{
-        m_client_repo->saveUserFace(m_session->getUserId(), vectorJson);
-    }catch(const std::runtime_error& e){
-        qDebug() << e.what();
+    /*
+     *  SIGN UP
+     */
+    if(m_session->isLoggedIn()){
+        // the session has already been created in MainWindow::attemptSignupBankUser
+        try{
+            m_client_repo->saveUserFace(m_session->getUserId(), vectorJson);
+        }catch(const std::runtime_error& e){
+            qDebug() << e.what();
+        }
+    }else{
+    /*
+     *  LOG IN
+     *  the session hasn't been created yet
+     */
+        if(!verifyFaceLogin(vectorJson)){
+            qDebug() << "The face hasn't been verified!";
+        }else{
+            qDebug() << "ClientService: logged in successfully!";
+            emit faceLoginSuccessful();
+        }
     }
 }

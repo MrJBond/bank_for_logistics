@@ -41,6 +41,7 @@ private slots:
     void attemptLoginDbUser();
     void attemptLoginBankUser();
     void attemptSignupBankUser();
+    void loginWithFace();
     void onLoginWithFaceClicked();
     // show all
     void on_actionShowClients_triggered();

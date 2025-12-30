@@ -48,6 +48,10 @@ private:
     QLineSeries* fetchBalanceHistory(const int id_client, QStringList& categories) const;
 
     void setupHealthScoreChart(const double score) const;
+    /********************************************************
+                        FACE LOG IN
+     **********************************************************/
+    bool verifyFaceLogin(const QString& currentFaceVectorJson) const;
 public:
     ClientService();
     ~ClientService(){
@@ -99,7 +103,6 @@ public:
     /********************************************************
                         FACE LOG IN
      **********************************************************/
-    bool verifyFaceLogin(const QString& currentFaceVectorJson) const;
     void requestFaceVector(const QString& base64Image);
 signals:
     // to notify the MainWindow
@@ -109,6 +112,7 @@ signals:
     void finalLoanAmount(double amount);
     void balanceCheckResult(const std::vector<Account>& accounts);
     void transactionListResult(const std::vector<Transaction>& transactions);
+    void faceLoginSuccessful();
  private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleLoanRejection();

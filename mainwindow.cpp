@@ -24,6 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
         m_pythonServerProcess = new QProcess(this);
         startPythonServer();
 
+        connect(m_client_service.get(), &ClientService::faceLoginSuccessful,
+                this, [this](){login([](){});}); // to close the log in dialog
+
         if(m_dlgLogin.exec() != QDialog::Accepted){
             stopPythonServer();
             throw std::runtime_error("Failed to login!");
@@ -188,6 +191,14 @@ void MainWindow::attemptLoginBankUser(){
     };
     login(userLogin);
 }
+void MainWindow::loginWithFace(){
+    FaceCaptureDialog dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        const QString base64Image = dlg.getCapturedImageBase64();
+        qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
+        m_client_service->requestFaceVector(base64Image);
+    }
+}
 void MainWindow::attemptSignupBankUser(){
     qDebug() << "Bank user sign up";
     auto userLogin = [&](){
@@ -214,23 +225,13 @@ void MainWindow::attemptSignupBankUser(){
         QFormLayout *layout = new QFormLayout();
         createDialogBox("Would you like to save your face to be able to log in by scanning it?", dlg, layout);
         if(dlg.exec() == QDialog::Accepted) {
-            FaceCaptureDialog dlg(this);
-            if (dlg.exec() == QDialog::Accepted) {
-                QString base64Image = dlg.getCapturedImageBase64();
-                m_client_service->requestFaceVector(base64Image);
-            }
+            loginWithFace();
         }
     };
     login(userLogin);
 }
 void MainWindow::onLoginWithFaceClicked(){
-    FaceCaptureDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        QString base64Image = dlg.getCapturedImageBase64();
-        if(!m_client_service->verifyFaceLogin(base64Image)){
-            createMessageBox("Failed to log in!");
-        }
-    }
+    loginWithFace();
 }
 
 /***************************************************************
@@ -904,7 +905,7 @@ void MainWindow::startPythonServer()
 
     // Set up the arguments
     QStringList args;
-    args << scriptPath;
+    args << "-u" << scriptPath; // unbuffered
 
 
     // This connects to a slot that handles errors *during* the process lifetime

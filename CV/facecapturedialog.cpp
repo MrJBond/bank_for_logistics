@@ -36,14 +36,19 @@ void FaceCaptureDialog::captureImage() {
     m_imageCapture->capture();
 }
 
+//#define TEST_IMG
 void FaceCaptureDialog::imageSaved(int id, const QImage &preview) {
     Q_UNUSED(id);
     QByteArray byteArray;
     QBuffer buffer(&byteArray);
     buffer.open(QIODevice::WriteOnly);
+#ifdef TEST_IMG
+    QImage testImage(":/img/img/person3.jpg"); // person1, person2, person3
+    testImage.save(&buffer, "JPG");
+#else
     preview.save(&buffer, "JPG");
+#endif
     m_base64Image = QString::fromLatin1(byteArray.toBase64().data());
-
     m_camera->stop();
     accept();
 }

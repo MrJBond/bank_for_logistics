@@ -1,4 +1,6 @@
-import face_recognition
+from deepface import DeepFace
+import sys
+import io
 import numpy as np
 from flask import Flask, request, jsonify
 import joblib
@@ -6,7 +8,16 @@ import base64
 import cv2
 import json
 from PIL import Image
-import io
+import tempfile
+import os
+
+
+# Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 
 # -------------------------------------------------------------------
 # SECTION 1: FUZZY LOGIC UTILITIES (Evaluator)
@@ -224,96 +235,80 @@ def recommend_loan():
 #--------------------------------------------------------------------
 # ENDPOINT 3: PROCESS THE FACE VECTOR
 #--------------------------------------------------------------------
-def base64_to_image(base64_string):
-    if not base64_string:
-        return None
-    try:
-        # Remove data URL prefix if present
-        if ',' in base64_string:
-            print(f"Removing data URL prefix...")
-            base64_string = base64_string.split(',')[1]
-
-        # Decode base64
-        img_bytes = base64.b64decode(base64_string)
-        print(f"Decoded {len(img_bytes)} bytes")
-
-        # Open with PIL
-        pil_img = Image.open(io.BytesIO(img_bytes))
-        print(f"PIL image mode: {pil_img.mode}, size: {pil_img.size}")
-
-        # Convert to RGB (face_recognition needs RGB)
-        if pil_img.mode != 'RGB':
-            print(f"Converting from {pil_img.mode} to RGB")
-            pil_img = pil_img.convert('RGB')
-
-        # Convert to numpy array with explicit dtype
-        img_array = np.array(pil_img, dtype=np.uint8)
-
-        print(f"Final numpy array - shape: {img_array.shape}, dtype: {img_array.dtype}")
-
-        return img_array
-
-    except Exception as e:
-        print(f"Error decoding image: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-
 @app.route('/get-face-vector', methods=['POST'])
 def get_face_vector():
-    data = request.get_json()
-    image_b64 = data.get('image')
-
-    if not image_b64:
-        return jsonify({'success': False, 'message': 'No image data received'})
-
-    # Decode image
-    img = base64_to_image(image_b64)
-
-    if img is None:
-        return jsonify({'success': False, 'message': 'Image decoding failed'})
-
-    # CRITICAL DEBUG INFO
-    print(f"=== DEBUG INFO ===")
-    print(f"Image shape: {img.shape}")
-    print(f"Image dtype: {img.dtype}")
-    print(f"Image type: {type(img)}")
-    print(f"Is contiguous: {img.flags['C_CONTIGUOUS']}")
-    print(f"Min/Max values: {img.min()}, {img.max()}")
-
-    # Check if it's actually uint8 RGB
-    if img.dtype != np.uint8:
-        print(f"WARNING: dtype is {img.dtype}, converting to uint8")
-        img = img.astype(np.uint8)
-
-    if len(img.shape) != 3 or img.shape[2] != 3:
-        print(f"ERROR: Image is not 3-channel RGB! Shape: {img.shape}")
-        return jsonify({'success': False, 'message': f'Invalid image format: {img.shape}'})
-
-    # Make sure it's contiguous
-    if not img.flags['C_CONTIGUOUS']:
-        print("WARNING: Array not contiguous, fixing...")
-        img = np.ascontiguousarray(img)
+    print("!!! ROUTE HIT - get_face_vector (DeepFace) !!!", flush=True)
 
     try:
-        # Get face encodings
-        encodings = face_recognition.face_encodings(img)
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data'})
 
-        if len(encodings) > 0:
-            return jsonify({'success': True, 'vector': encodings[0].tolist()})
-        else:
-            return jsonify({'success': False, 'message': 'No face detected'})
+        b64_str = data.get('image')
+        if not b64_str:
+            return jsonify({'success': False, 'message': 'No image data'})
+
+        # ---------------------------------------------------------
+        # 1. DECODE IMAGE (Standard OpenCV)
+        # ---------------------------------------------------------
+        if "," in b64_str:
+            b64_str = b64_str.split(",")[1]
+
+        img_bytes = base64.b64decode(b64_str)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if img_bgr is None:
+            return jsonify({'success': False, 'message': 'Image decoding failed'})
+
+        print(f"Debug: Image decoded. Shape: {img_bgr.shape}", flush=True)
+
+        # ---------------------------------------------------------
+        # 2. GENERATE VECTOR (Using DeepFace)
+        # ---------------------------------------------------------
+        print("Debug: Calling DeepFace...", flush=True)
+
+        # 'Facenet' model creates a 128-dimensional vector (similar to dlib).
+        # 'opencv' detector is fast and reliable.
+        # This function handles all preprocessing internally.
+        embedding_objs = DeepFace.represent(
+            img_path = img_bgr,
+            model_name = "Facenet",
+            detector_backend = "opencv",
+            enforce_detection = True
+        )
+
+        # DeepFace returns a list of results (one for each face found).
+        # We take the first one.
+        vector = embedding_objs[0]["embedding"]
+
+        print(f"Success! Vector generated. Length: {len(vector)}", flush=True)
+
+        return jsonify({'success': True, 'vector': vector})
+
+    except ValueError as ve:
+        # DeepFace throws ValueError if enforce_detection=True and no face is found
+        # We convert exception to string safely to avoid emoji crashes
+        safe_msg = str(ve).encode('ascii', 'ignore').decode('ascii')
+        print(f"Face Detection Info: {safe_msg}", flush=True)
+        return jsonify({'success': False, 'message': 'No face detected'})
 
     except Exception as e:
-        print(f"Face recognition error: {e}")
+        # Safe string conversion for generic errors too
+        safe_msg = str(e).encode('ascii', 'ignore').decode('ascii')
+        print(f"CRITICAL SERVER ERROR: {safe_msg}", flush=True)
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'message': f'Face processing error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Server error: {safe_msg}'}), 500
 
 # -------------------------------------------------------------------
 # SECTION 6: RUN THE SERVER
 # -------------------------------------------------------------------
 
 if __name__ == '__main__':
-    print("Starting Flask server...")
-    app.run(host='127.0.0.1', port=5000, debug=False)
+    print("\n=== Final registered routes ===")
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.endpoint}: {rule.rule} [{', '.join(rule.methods)}]")
+    print("================================\n")
+    print("Starting Flask server...", flush=True)
+    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)

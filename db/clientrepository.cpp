@@ -373,8 +373,7 @@ double ClientRepository::getTotalCurrentBalance(const int id_client) const{
 void ClientRepository::saveUserFace(const int id, const QString& vectorJson) const{
     QSqlQuery queryAuth;
     queryAuth.prepare(
-        "INSERT INTO public.\"ClientAuth\" (face_encoding) WHERE id_client = :id"
-        "VALUES (:faceVec)"
+        "UPDATE public.\"ClientAuth\" SET face_encoding = :faceVec WHERE id_client = :id;"
         );
     queryAuth.bindValue(":id", id);
     if (vectorJson.isEmpty()) {

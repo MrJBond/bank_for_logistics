@@ -55,6 +55,8 @@ public:
     void getReport(QMainWindow* window, std::function<void(QtRPT* report)> putData, size_t recordCount) const;
 
 signals:
+    // to signal to the MainWindow
+    void createMessageBox(const char* message);
 };
 
 #endif // ABSTRACTSERVICE_H

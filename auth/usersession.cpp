@@ -11,6 +11,9 @@ UserSession* UserSession::getInstance()
 UserSession::UserSession()
     : m_userId(0), m_isLoggedIn(false)
 {
+    m_faceIdService = std::make_shared<FaceIdService>();
+    connect(m_faceIdService.get(), &FaceIdService::vectorCalculatedForVerification,
+            this, &UserSession::handleUserVerification);
     // Default state is logged out
 }
 
@@ -125,4 +128,23 @@ QString UserSession::getUsername() const
 bool UserSession::isLoggedIn() const
 {
     return m_isLoggedIn;
+}
+
+void UserSession::requestUserVerification() const
+{
+    if(m_isLoggedIn){
+        FaceCaptureDialog dlg;
+        if (dlg.exec() == QDialog::Accepted) {
+            const QString base64Image = dlg.getCapturedImageBase64();
+            qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
+            m_faceIdService->requestFaceVector(base64Image, true);
+        }
+    }
+}
+void UserSession::handleUserVerification(const QString& vectorJson){
+    // TODO : verify
+    verify
+    emit userVerifiedSuccessfully();
+
+   // emit verificationFailed();
 }

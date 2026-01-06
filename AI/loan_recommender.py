@@ -10,7 +10,7 @@ import json
 from PIL import Image
 import tempfile
 import os
-
+from sklearn.ensemble import IsolationForest
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -300,6 +300,56 @@ def get_face_vector():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Server error: {safe_msg}'}), 500
+
+# -------------------------------------------------------------------
+# ENDPOINT 4: FRAUD DETECTION (Anomaly Detection)
+# -------------------------------------------------------------------
+@app.route('/check-fraud', methods=['POST'])
+def check_fraud():
+    print('!!!!! ROUTE HIT - check-fraud !!!!!', flush = True)
+    try:
+        data = request.get_json()
+        new_amount = data.get('amount')
+        history = data.get('history') # List of float amounts
+
+        print(f"Debug: Amount={new_amount}, HistoryLen={len(history) if history else 0}", flush=True)
+
+        if new_amount is None:
+            return jsonify({'error': 'Missing amount'}), 400
+
+        # 1. Edge Case: Not enough data to judge
+        # If user is new (fewer than 5 transactions), we can't determine anomalies.
+        if len(history) < 5:
+            return jsonify({'status': 'SAFE', 'reason': 'Not enough history'})
+
+        # 2. Prepare Data for Scikit-Learn
+        # IsolationForest expects a 2D array: [[10], [20], [15]...]
+        X_history = np.array(history).reshape(-1, 1)
+        X_new = np.array([[new_amount]])
+
+        # 3. Train Isolation Forest
+        # contamination='auto' lets the model decide threshold,
+        # or use 0.1 (assume 10% of txns might be weird)
+        clf = IsolationForest(contamination=0.1, random_state=42)
+        clf.fit(X_history)
+
+        # 4. Predict
+        # Returns -1 for Outlier (Fraud), 1 for Inlier (Safe)
+        prediction = clf.predict(X_new)
+
+        # Get anomaly score (lower is more abnormal)
+        score = clf.decision_function(X_new)[0]
+
+        print(f"Fraud Check: Amount={new_amount}, Pred={prediction[0]}, Score={score:.2f}", flush=True)
+
+        if prediction[0] == -1:
+            return jsonify({'status': 'SUSPICIOUS', 'score': score})
+        else:
+            return jsonify({'status': 'SAFE', 'score': score})
+
+    except Exception as e:
+        print(f"FRAUD CHECK ERROR: {e}", flush=True)
+        return jsonify({'error': str(e)}), 500
 
 # -------------------------------------------------------------------
 # SECTION 6: RUN THE SERVER

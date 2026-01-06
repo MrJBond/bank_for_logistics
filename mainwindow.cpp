@@ -45,6 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
                 this, &MainWindow::handleTransactionListResult);
         connect(m_loan_service.get(), &LoanService::loanResult,
                 this, &MainWindow::handleLoanTakingResult);
+        connect(m_transaction_service.get(), &TransactionService::createMessageBox,
+                this, &MainWindow::onCreateMessageBox);
     }else{
         throw std::runtime_error("Failed to connect to db!");
     }
@@ -233,7 +235,9 @@ void MainWindow::attemptSignupBankUser(){
 void MainWindow::onLoginWithFaceClicked(){
     loginWithFace();
 }
-
+void MainWindow::onCreateMessageBox(const char* m){
+    createMessageBox(m);
+}
 /***************************************************************
                     UI helper functions
  ***************************************************************/
@@ -455,7 +459,7 @@ void MainWindow::on_actionMake_transaction_triggered(){
                                                                   names,  m_account_service.get(), &comboData);
     if(dlg.size() != 0){
         try{
-            m_transaction_service->makeTransaction(dlg["Source Account Id"].toInt(),
+            m_transaction_service->requestTransaction(dlg["Source Account Id"].toInt(),
                                                    dlg["Destination Account Id"].toInt(),
                                                    dlg["Amount"].toDouble());
         }catch(const std::runtime_error& e){

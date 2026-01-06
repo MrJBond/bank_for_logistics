@@ -815,7 +815,7 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const 
         // 4. Calculate Distance
         double dist = calculateDistance(currentVector, dbVector);
 
-        // Log it for debugging (CRITICAL to see what values you are getting)
+        // Log it for debugging (CRITICAL to see what values we are getting)
         qDebug() << "Comparing against User ID:" << id << " Distance:" << dist;
 
         // Facenet L2 Threshold is usually around 10.0

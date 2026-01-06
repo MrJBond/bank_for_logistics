@@ -9,11 +9,12 @@ public:
     explicit FaceIdService(QObject *parent = nullptr){};
 
     // Call this to start the process
-    void requestFaceVector(const QString& base64Image);
+    void requestFaceVector(const QString& base64Image, bool verifyUser = false);
 
 signals:
     // Emitted when Python returns the vector (e.g. "[0.123, -0.42, ...]")
     void vectorCalculated(const QString& vectorJson);
+    void vectorCalculatedForVerification(const QString& vectorJson);
 };
 
 #endif // FACEIDSERVICE_H

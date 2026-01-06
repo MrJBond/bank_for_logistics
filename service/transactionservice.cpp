@@ -3,6 +3,15 @@
 
 TransactionService::TransactionService() {
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
+    m_fraudDetector = std::make_shared<FraudDetector>();
+    connect(m_fraudDetector.get(), &FraudDetector::networkError,
+            this, &TransactionService::handleNetworkFailure);
+    connect(m_fraudDetector.get(), &FraudDetector::transactionChecked,
+            this, &TransactionService::handleTransactionChecked);
+    connect(m_session, &UserSession::userVerifiedSuccessfully,
+            this, &TransactionService::handleUserVerification);
+    connect(m_session, &UserSession::verificationFailed,
+            this, &TransactionService::cancelPendingTransaction);
 }
 void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
@@ -106,6 +115,13 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
     createChartBox(barChart, w, h);
 }
 
+/***********************************************************
+ *                      MAKE A TRANSACTION
+ ************************************************************/
+void TransactionService::requestTransaction(const int id_account, const int id_accountTo, const double amount){
+    Transaction tempTran(INT_MAX, QDate::currentDate(), amount, id_account, id_accountTo);
+    const bool suspicious = isTransactionSuspicious(tempTran);
+}
 void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount) {
     const int id = m_session->getUserId();
     if(id <= 0){
@@ -183,4 +199,94 @@ void TransactionService::makeTransaction(const int id_account, const int id_acco
         throw; // Re-throw to let the UI know
     }
 }
+// fraud detection
+bool TransactionService::isTransactionSuspicious(const Transaction& transaction){
+    const int accountId = transaction.getIdAccount();
+    QJsonArray historyArray;
+    std::vector<Transaction> trans;
+    try{
+        trans = m_transaction_repo->getTransactionsForAccount(accountId);
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+        return false;
+    }
+    // Take the last 20 transactions, made from this account
+    const int num = 20;
+    const auto acc = dynamic_pointer_cast<Account>(m_account_repo->getById(accountId));
+    std::sort(trans.begin(), trans.end(), [](const Transaction& t1, const Transaction& t2){
+        return t1.getDate() > t2.getDate();
+    });
+    for(const Transaction& t : trans){
+        if(historyArray.size() == num) break;
+        if(t.getIdAccount() == accountId)
+            historyArray.append(Entity::toDollar(t.getAmount(), acc->getCurrency()));
+    }
+    qDebug() << "History: " << historyArray;
+    m_fraudDetector->requestTransactionCheck(transaction, historyArray);
+    return true;
+}
+void TransactionService::handleNetworkFailure(const QString& errorString){
+    qDebug() << "TransactionService: " << errorString;
+}
+void TransactionService::handleTransactionChecked(bool isSuspicious, const double score,  const Transaction& t){
+    qDebug() << score << " " << isSuspicious;
+    if(!isSuspicious){
+        try {
+            makeTransaction(t.getIdAccount(), t.getIdAccountTo(), t.getAmount());
+            emit createMessageBox("Transaction successful!");
+        } catch (const std::exception& e) {
+            emit createMessageBox(e.what());
+        }
+        catch(...){
+            const char* m = "Transaction failed";
+            emit createMessageBox(m);
+            qDebug() << m;
+        }
+    }else{
+        // --- SUSPICIOUS PATH (Wait for Face ID) ---
+        qDebug() << "Transaction paused for verification.";
+        emit createMessageBox("Security Alert: This transaction is unusual. Face Verification required.");
 
+        // 1. SAVE THE STATE
+        // We copy the raw data into our member variable
+        m_pendingTx = PendingTx{ t.getIdAccount(), t.getIdAccountTo(), t.getAmount() };
+
+        // 2. TRIGGER VERIFICATION
+        if (m_session->isLoggedIn()) {
+            m_session->requestUserVerification();
+        } else {
+            emit createMessageBox("You are logged out!");
+        }
+    }
+}
+void TransactionService::handleUserVerification(){
+    // success
+    // 1. Check if we actually have something waiting
+    if (!m_pendingTx.has_value()) {
+        qWarning() << "Verification succeeded, but no transaction was pending.";
+        return;
+    }
+
+    // 2. RETRIEVE THE STATE
+    PendingTx tx = m_pendingTx.value();
+
+    qDebug() << "Face ID Verified. Resuming transaction...";
+
+    // 3. EXECUTE
+    try {
+        makeTransaction(tx.fromAccount, tx.toAccount, tx.amount);
+        emit createMessageBox("Identity Verified. Transaction executed successfully.");
+    } catch (const std::exception& e) {
+        emit createMessageBox((QString("Transaction failed after verification: ") + e.what()).toStdString().c_str());
+    }
+
+    // 4. CLEANUP
+    // Clear the memory so we don't accidentally run it again
+    m_pendingTx.reset();
+}
+void TransactionService::cancelPendingTransaction() {
+    if (m_pendingTx.has_value()) {
+        qDebug() << "Pending transaction cancelled.";
+        m_pendingTx.reset();
+    }
+}

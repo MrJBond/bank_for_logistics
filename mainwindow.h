@@ -43,6 +43,7 @@ private slots:
     void attemptSignupBankUser();
     void loginWithFace();
     void onLoginWithFaceClicked();
+    void onCreateMessageBox(const char* m);
     // show all
     void on_actionShowClients_triggered();
 

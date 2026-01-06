@@ -1,6 +1,6 @@
 #include "faceidservice.h"
 
-void FaceIdService::requestFaceVector(const QString& base64Image) {
+void FaceIdService::requestFaceVector(const QString& base64Image, bool verifyUser) {
     qDebug() << "=== requestFaceVector called ===";
     qDebug() << "Image data length:" << base64Image.length();
 
@@ -36,7 +36,7 @@ void FaceIdService::requestFaceVector(const QString& base64Image) {
                 // Get the vector array as a string representation
                 QJsonDocument vecDoc(obj["vector"].toArray());
                 QString vectorString = vecDoc.toJson(QJsonDocument::Compact);
-                emit vectorCalculated(vectorString);
+                verifyUser ? emit vectorCalculatedForVerification(vectorString) : emit vectorCalculated(vectorString);
             } else {
                 emit networkError(obj["message"].toString());
             }

@@ -10,6 +10,7 @@ include($$PWD/QtRptProject/QtRPT/QtRPT.pri)
 
 SOURCES += \
     AI/chatbot.cpp \
+    AI/frauddetector.cpp \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
     CV/facecapturedialog.cpp \
@@ -36,6 +37,7 @@ SOURCES += \
 
 HEADERS += \
     AI/chatbot.h \
+    AI/frauddetector.h \
     AI/loanrecommender.h \
     AI/networkmanager.h \
     CV/facecapturedialog.h \

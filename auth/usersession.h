@@ -7,11 +7,14 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include "db/dbconnector.h"
+#include "faceidservice.h"
+#include "CV/facecapturedialog.h"
 
 class ClientService;
 
-class UserSession
+class UserSession : public QObject
 {
+    Q_OBJECT
 public:
     static UserSession* getInstance();
     int login(const QString& username, const QString& password);
@@ -24,7 +27,7 @@ public:
     int getUserId() const;
     QString getUsername() const;
     bool isLoggedIn() const;
-
+    void requestUserVerification() const;
 private:
     UserSession();
     UserSession(const UserSession&) = delete;
@@ -33,6 +36,12 @@ private:
     int m_userId;
     QString m_username;
     bool m_isLoggedIn;
+    std::shared_ptr<FaceIdService> m_faceIdService = nullptr;
+signals:
+    void userVerifiedSuccessfully();
+    void verificationFailed();
+private slots:
+    void handleUserVerification(const QString& vectorJson);
 };
 
 #endif // USERSESSION_H

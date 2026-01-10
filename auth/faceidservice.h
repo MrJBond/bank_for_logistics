@@ -3,6 +3,8 @@
 #include "AI/networkmanager.h"
 #include <QJsonArray>
 
+#define USER_FACE_THRESHOLD 10.0
+
 class FaceIdService : public NetworkManager {
     Q_OBJECT
 public:

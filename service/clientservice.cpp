@@ -798,7 +798,7 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const 
 
         // Facenet L2 Threshold is usually around 10.0
         // We track the BEST match, not just the first one under threshold
-        if (dist < 10.0 && dist < bestDistance) {
+        if (dist < USER_FACE_THRESHOLD && dist < bestDistance) {
             bestDistance = dist;
             bestMatchId = id;
         }

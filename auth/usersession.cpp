@@ -156,7 +156,7 @@ void UserSession::handleUserVerification(const QString& vectorJson){
         const std::vector<double> dbVector = m_faceIdService->parseUserFaceVector(dbJson);
         const double dist = m_faceIdService->calculateDistance(currentVector, dbVector);
         qDebug() << "Distance: " << dist;
-        if (dist < 10.0)
+        if (dist < USER_FACE_THRESHOLD)
             emit userVerifiedSuccessfully();
         else
             emit verificationFailed();

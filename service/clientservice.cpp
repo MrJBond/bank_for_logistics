@@ -771,49 +771,27 @@ void ClientService::setupHealthScoreChart(const double score) const{
 /************************************************************
                 FACE LOG IN
  *************************************************************/
-// Helper: Euclidean Distance
-double calculateDistance(const std::vector<double>& v1, const std::vector<double>& v2) {
-    if (v1.size() != v2.size()) return 1000.0; // Mismatch error
-
-    double sum = 0.0;
-    for (size_t i = 0; i < v1.size(); ++i) {
-        double diff = v1[i] - v2[i];
-        sum += (diff * diff);
-    }
-    return std::sqrt(sum);
-}
 bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const {
     // 1. Parse the Current User's Vector (from the login camera scan)
-    QJsonDocument doc = QJsonDocument::fromJson(currentFaceVectorJson.toUtf8());
-    QJsonArray arr = doc.array();
-    std::vector<double> currentVector;
-    for(auto val : arr) currentVector.push_back(val.toDouble());
-
+    const std::vector<double> currentVector = m_faceIdService->parseUserFaceVector(currentFaceVectorJson);
     // 2. Fetch ALL users' face vectors from DB
-    std::vector<std::pair<int, QString>> faces;
+    std::unordered_map<int, QString> faces;
     try {
         faces = m_client_repo->getFaces();
     } catch(const std::runtime_error& e) {
         qDebug() << e.what();
         return false;
     }
-
     // 3. Compare with every user in the database
     double bestDistance = 1000.0;
     int bestMatchId = -1;
-
     for(const auto& f : faces) {
         const int id = f.first;
         const QString dbJson = f.second;
-
         // Parse DB vector
-        QJsonDocument dbDoc = QJsonDocument::fromJson(dbJson.toUtf8());
-        QJsonArray dbArr = dbDoc.array();
-        std::vector<double> dbVector;
-        for(auto val : dbArr) dbVector.push_back(val.toDouble());
-
+        const std::vector<double> dbVector = m_faceIdService->parseUserFaceVector(dbJson);
         // 4. Calculate Distance
-        double dist = calculateDistance(currentVector, dbVector);
+        const double dist = m_faceIdService->calculateDistance(currentVector, dbVector);
 
         // Log it for debugging (CRITICAL to see what values we are getting)
         qDebug() << "Comparing against User ID:" << id << " Distance:" << dist;
@@ -825,7 +803,6 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const 
             bestMatchId = id;
         }
     }
-
     // 5. Final Decision
     if (bestMatchId != -1) {
         qDebug() << "Face Match Found! User ID:" << bestMatchId << " Best Distance:" << bestDistance;
@@ -838,14 +815,11 @@ bool ClientService::verifyFaceLogin(const QString& currentFaceVectorJson) const 
             qDebug() << e.what();
             return false;
         }
-
         if(!client) return false;
-
         // LOGIN SUCCESSFUL
         m_session->createSession(bestMatchId, QString(client->getName().c_str()));
         return true;
     }
-
     qDebug() << "Login Failed: No matching face found.";
     return false;
 }

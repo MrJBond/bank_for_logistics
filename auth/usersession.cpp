@@ -12,6 +12,7 @@ UserSession::UserSession()
     : m_userId(0), m_isLoggedIn(false)
 {
     m_faceIdService = std::make_shared<FaceIdService>();
+    m_client_repo = std::make_shared<ClientRepository>();
     connect(m_faceIdService.get(), &FaceIdService::vectorCalculatedForVerification,
             this, &UserSession::handleUserVerification);
     // Default state is logged out
@@ -142,9 +143,24 @@ void UserSession::requestUserVerification() const
     }
 }
 void UserSession::handleUserVerification(const QString& vectorJson){
-    // TODO : verify
-    verify
-    emit userVerifiedSuccessfully();
-
-   // emit verificationFailed();
+    if(m_isLoggedIn){
+        const std::vector<double> currentVector = m_faceIdService->parseUserFaceVector(vectorJson);
+        std::unordered_map<int, QString> faces;
+        try {
+            faces = m_client_repo->getFaces();
+        } catch(const std::runtime_error& e) {
+            qDebug() << e.what();
+        }
+        const QString dbJson = faces[m_userId];
+        // Parse DB vector
+        const std::vector<double> dbVector = m_faceIdService->parseUserFaceVector(dbJson);
+        const double dist = m_faceIdService->calculateDistance(currentVector, dbVector);
+        qDebug() << "Distance: " << dist;
+        if (dist < 10.0)
+            emit userVerifiedSuccessfully();
+        else
+            emit verificationFailed();
+    }else{
+        emit verificationFailed();
+    }
 }

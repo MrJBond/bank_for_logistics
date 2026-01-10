@@ -46,3 +46,25 @@ void FaceIdService::requestFaceVector(const QString& base64Image, bool verifyUse
         reply->deleteLater();
     });
 }
+
+std::vector<double> FaceIdService::parseUserFaceVector(const QString& currentFaceVectorJson) const{
+    //  Parse the Current User's Vector (from the login camera scan)
+    QJsonDocument doc = QJsonDocument::fromJson(currentFaceVectorJson.toUtf8());
+    QJsonArray arr = doc.array();
+    std::vector<double> currentVector;
+    for(auto val : arr) currentVector.push_back(val.toDouble());
+    return currentVector;
+}
+
+// Helper: Euclidean Distance
+// compare face vectors
+double FaceIdService::calculateDistance(const std::vector<double>& v1, const std::vector<double>& v2) const{
+    if (v1.size() != v2.size()) return 1000.0; // Mismatch error
+
+    double sum = 0.0;
+    for (size_t i = 0; i < v1.size(); ++i) {
+        double diff = v1[i] - v2[i];
+        sum += (diff * diff);
+    }
+    return std::sqrt(sum);
+}

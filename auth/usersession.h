@@ -7,6 +7,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include "db/dbconnector.h"
+#include "db/clientrepository.h"
 #include "faceidservice.h"
 #include "CV/facecapturedialog.h"
 
@@ -36,6 +37,7 @@ private:
     int m_userId;
     QString m_username;
     bool m_isLoggedIn;
+    std::shared_ptr<ClientRepository> m_client_repo = nullptr;
     std::shared_ptr<FaceIdService> m_faceIdService = nullptr;
 signals:
     void userVerifiedSuccessfully();

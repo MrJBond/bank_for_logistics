@@ -832,17 +832,21 @@ void MainWindow::on_actionReset_triggered(){
     resetLoginDialog();
     buildLoginDialog();
     connectLoginDialog();
+    m_loginWithFaceButton->setEnabled(false); /* disable to
+    prevent a wrong face from being saved with the current user
+    in ClientService::handleUserFaceVector
+    */
     if(m_dlgLogin.exec() != QDialog::Accepted)
        qDebug() << "Failed to login!";
     else{
         if(m_userRadioButton->isChecked()){
-            try{
+            try{ // set the default user for the bank Client
                 m_db->reConnect("bank_app_user",
                                     "qwerty");
             }catch(const std::runtime_error& e){
                 qDebug() << e.what();
             }
-        }else{
+        }else{ // db user
             try{
                 m_db->reConnect(m_usernameInput->text(),
                                     m_userpasswordInput->text());

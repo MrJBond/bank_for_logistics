@@ -288,5 +288,6 @@ void TransactionService::cancelPendingTransaction() {
     if (m_pendingTx.has_value()) {
         qDebug() << "Pending transaction cancelled.";
         m_pendingTx.reset();
+        emit createMessageBox("The Identity has NOT been Verified! Transaction cancelled!");
     }
 }

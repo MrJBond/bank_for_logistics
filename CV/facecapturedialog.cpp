@@ -43,7 +43,7 @@ void FaceCaptureDialog::imageSaved(int id, const QImage &preview) {
     QBuffer buffer(&byteArray);
     buffer.open(QIODevice::WriteOnly);
 #ifdef TEST_IMG
-    QImage testImage(":/img/img/person3.jpg"); // person1, person2, person3
+    QImage testImage(":/img/img/person4.png"); // person1.jpg, person2.jpg, person3.jpg, person4.png
     testImage.save(&buffer, "JPG");
 #else
     preview.save(&buffer, "JPG");

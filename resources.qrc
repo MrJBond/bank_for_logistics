@@ -5,6 +5,7 @@
         <file>img/person1.jpg</file>
         <file>img/person2.jpg</file>
         <file>img/person3.jpg</file>
+        <file>img/person4.png</file>
     </qresource>
     <qresource prefix="/reports">
         <file>reportsFiles/loanReport.xml</file>

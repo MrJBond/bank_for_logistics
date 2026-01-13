@@ -11,6 +11,9 @@ from PIL import Image
 import tempfile
 import os
 from sklearn.ensemble import IsolationForest
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -156,8 +159,32 @@ def get_loan_recommendation_score(input_data):
     # Defuzzify to get a crisp score
     return centroid_defuzz(output_grid, agg_mu)
 
+# ---------------------------------------------------------
+# SECTION 5: TRAIN THE TRANSACTION CATEGORIZE MODEL
+# ---------------------------------------------------------
+# In a real app, you'd load this from a database.
+# Here, we hardcode some training data to teach the bot.
+train_data = [
+    ("Uber request", "Transport"), ("Lyft ride", "Transport"), ("Shell Station", "Transport"),
+    ("McDonalds", "Food"), ("Starbucks", "Food"), ("Burger King", "Food"), ("Whole Foods", "Food"),
+    ("Netflix Subscription", "Bills"), ("Electric Bill", "Bills"), ("Rent payment", "Bills"),
+    ("Walmart", "Shopping"), ("Amazon", "Shopping"), ("Target", "Shopping"), ("Nike Store", "Shopping")
+]
+
+# Split into X (text) and y (labels)
+X_train_text = [t[0] for t in train_data]
+y_train_labels = [t[1] for t in train_data]
+
+# Create a Pipeline:
+# 1. Vectorizer: Converts text to frequency matrix
+# 2. Classifier: Naive Bayes
+category_model = make_pipeline(CountVectorizer(), MultinomialNB())
+category_model.fit(X_train_text, y_train_labels)
+
+print("Transaction Categorizer Model trained!", flush=True)
+
 # -------------------------------------------------------------------
-# SECTION 5: FLASK SERVER & AI MODEL LOADING
+# SECTION 6: FLASK SERVER & AI MODEL LOADING
 # -------------------------------------------------------------------
 
 app = Flask(__name__)
@@ -351,8 +378,33 @@ def check_fraud():
         print(f"FRAUD CHECK ERROR: {e}", flush=True)
         return jsonify({'error': str(e)}), 500
 
+# ---------------------------------------------------------
+# ENDPOINT 5: TRANSACTION CATEGORIZE
+# ---------------------------------------------------------
+@app.route('/categorize', methods=['POST'])
+def categorize_transaction():
+    try:
+        data = request.get_json()
+        description = data.get('description', '')
+        if not description:
+            return jsonify({'category': 'Unknown', 'icon': '❓'})
+        # Predict
+        category = category_model.predict([description])[0]
+        # Map category to Icon
+        icons = {
+            "Food": "🍔",
+            "Transport": "🚖",
+            "Bills": "💡",
+            "Shopping": "🛒"
+        }
+        icon = icons.get(category, "💳")
+        return jsonify({'category': category, 'icon': icon})
+    except Exception as e:
+        print(f"Categorization Error: {e}", flush=True)
+        return jsonify({'category': 'Error', 'icon': '⚠️'})
+
 # -------------------------------------------------------------------
-# SECTION 6: RUN THE SERVER
+# SECTION 7: RUN THE SERVER
 # -------------------------------------------------------------------
 
 if __name__ == '__main__':

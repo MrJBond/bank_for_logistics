@@ -1,12 +1,13 @@
 #include "transaction.h"
 
-Transaction::Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo):
+Transaction::Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo, const QString& description):
     Entity(id)
 {
     setDate(date);
     setAmount(amount);
     setIdAccount(id_account);
     setIdAccountTo(id_accountTo);
+    setDescription(description);
 }
 
 double Transaction::getAmount() const{
@@ -20,6 +21,9 @@ int Transaction::getIdAccount() const{
 }
 int Transaction::getIdAccountTo() const{
     return m_id_accountTo;
+}
+QString Transaction::getDescription() const{
+    return m_description;
 }
 
 void Transaction::setAmount(const double amount){
@@ -52,4 +56,10 @@ void Transaction::setIdAccountTo(const int id){
         throw std::invalid_argument("The destination account id is invalid!");
     }
     m_id_accountTo = id;
+}
+void Transaction::setDescription(const QString& description){
+    if(description.isEmpty()){
+        throw std::invalid_argument("The description is empty!");
+    }
+    m_description = description;
 }

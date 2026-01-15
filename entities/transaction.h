@@ -10,24 +10,27 @@ private:
     double m_amount = 0.;
     int m_id_account = 0;
     int m_id_accountTo = 0;
+    QString m_description = "";
 public:
     Transaction() = default;
-    Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo);
+    Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo, const QString& description);
     ~Transaction() = default;
     double getAmount() const;
     QDate getDate() const;
     int getIdAccount() const;
     int getIdAccountTo() const;
+    QString getDescription() const;
 
     void setAmount(const double amount);
     void setDate(const QDate date);
     void setIdAccount(const int id);
     void setIdAccountTo(const int id);
+    void setDescription(const QString& description);
 };
 inline QDebug operator<<(QDebug os, const Transaction& t){
     os << "Transaction: " << t.getId() << " " << t.getAmount() << " "
        << t.getDate() << " " << t.getIdAccount() << " "
-       << t.getIdAccountTo();
+       << t.getIdAccountTo() << " " << t.getDescription();
     return os;
 }
 inline void operator<<(QTextBrowser* browser, const Transaction& t){
@@ -36,7 +39,8 @@ inline void operator<<(QTextBrowser* browser, const Transaction& t){
     res += t.getDate().toString() + "   ";
     res += QString::number(t.getAmount()) + "   ";
     res += QString::number(t.getIdAccount()) + "   ";
-    res += QString::number(t.getIdAccountTo()) + '\n';
+    res += QString::number(t.getIdAccountTo()) + "   ";
+    res += t.getDescription() + '\n';
     browser->append(res);
 }
 #endif // TRANSACTION_H

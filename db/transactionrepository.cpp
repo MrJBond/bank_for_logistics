@@ -17,8 +17,9 @@ std::vector<std::shared_ptr<Entity>> TransactionRepository::getAll() const {
         double amount = query.value(2).toDouble();
         int id_account = query.value(3).toInt();
         int id_accountTo = query.value(4).toInt();
+        QString description = query.value(5).toString();
         try{
-            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
+            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description);
             res.push_back(transact);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -40,8 +41,9 @@ std::shared_ptr<Entity> TransactionRepository::getById(const int id) const{
         double amount = query.value(2).toDouble();
         int id_account = query.value(3).toInt();
         int id_accountTo = query.value(4).toInt();
+        QString description = query.value(5).toString();
         try{
-            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
+            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description);
             return transact;
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -55,14 +57,20 @@ void TransactionRepository::insert(std::shared_ptr<Entity> entity) {
         return;
     }
     if(Transaction* tran = dynamic_cast<Transaction*>(entity.get()); tran != nullptr){
+        // If description is empty, auto-generate one
+        if (tran->getDescription().isEmpty()) {
+            const QString desc = "Transfer to Account " + QString::number(tran->getIdAccountTo());
+            tran->setDescription(desc);
+        }
         QSqlQuery query;
         query.prepare(QString("INSERT INTO public.\"Transaction\" ") +
-                      "(date_transaction, amount, id_account, \"id_accountTo\")" +
-                      "VALUES(:date_transaction, :amount, :id_account, :id_accountTo);");
+                      "(date_transaction, amount, id_account, \"id_accountTo\", description)" +
+                      "VALUES(:date_transaction, :amount, :id_account, :id_accountTo, :desc);");
         query.bindValue(":date_transaction", tran->getDate());
         query.bindValue(":amount", tran->getAmount());
         query.bindValue(":id_account", tran->getIdAccount());
         query.bindValue(":id_accountTo", tran->getIdAccountTo());
+        query.bindValue(":desc", tran->getDescription());
         if(!query.exec()){
             throw std::runtime_error(query.lastError().text().toStdString());
         }
@@ -84,13 +92,15 @@ void TransactionRepository::update(std::shared_ptr<Entity> entity){
                       "SET date_transaction = :date_transaction, "
                       "amount = :amount, "
                       "id_account = :id_account, "
-                      "\"id_accountTo\" = :id_accountTo "
+                      "\"id_accountTo\" = :id_accountTo, "
+                      "description = :description "
                       "WHERE id_transaction = :id"
                       );
         query.bindValue(":date_transaction", tran->getDate());
         query.bindValue(":amount", tran->getAmount());
         query.bindValue(":id_account", tran->getIdAccount());
         query.bindValue(":id_accountTo", tran->getIdAccountTo());
+        query.bindValue(":description", tran->getDescription());
         query.bindValue(":id", tran->getId());
         if(!query.exec()){
             throw std::runtime_error(query.lastError().text().toStdString());

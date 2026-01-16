@@ -16,12 +16,12 @@ TransactionService::TransactionService() {
 void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
     if(table != nullptr){
-        table->setColumnCount(5);
-        table->setHorizontalHeaderLabels({"id", "Date", "Amount", "Id account", "Id account To"});
+        table->setColumnCount(6);
+        table->setHorizontalHeaderLabels({"id", "Date", "Amount", "Id account", "Id account To", "Description"});
         table->setRowCount(res.size());
     }
     if(browser != nullptr)
-        browser->append("id   Date   Amount   Id account   Id account To\n");
+        browser->append("id   Date   Amount   Id account   Id account To   Description\n");
     for(size_t i = 0;i < res.size(); ++i){
         const auto ent = res[i];
         Transaction* transact = dynamic_cast<Transaction*>(ent.get());
@@ -36,12 +36,13 @@ void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const
                 table->setItem(i, 2, new QTableWidgetItem(QString::number(transact->getAmount())));
                 table->setItem(i, 3, new QTableWidgetItem(QString::number(transact->getIdAccount())));
                 table->setItem(i, 4, new QTableWidgetItem(QString::number(transact->getIdAccountTo())));
+                table->setItem(i, 5, new QTableWidgetItem(transact->getDescription()));
             }
         }
     }
 }
-int TransactionService::insertTransaction(QDate date, double amount,
-                                           int id_account, int id_accountTo){
+int TransactionService::insertTransaction(const QDate& date, const double amount,
+                                           const int id_account, const int id_accountTo, const QString& description){
     std::shared_ptr<Transaction> tran = std::make_shared<Transaction>();
     bool isAccount = isPresent(id_account, m_account_repo.get());
     bool isAccountTo = isPresent(id_accountTo, m_account_repo.get());
@@ -51,6 +52,7 @@ int TransactionService::insertTransaction(QDate date, double amount,
         tran->setDate(date);
         tran->setIdAccount(id_account);
         tran->setIdAccountTo(id_accountTo);
+        tran->setDescription(description);
     }catch(const std::invalid_argument& e){
         ok = false;
         qDebug() << e.what();
@@ -62,8 +64,8 @@ int TransactionService::insertTransaction(QDate date, double amount,
     else
         throw std::invalid_argument("The transaction is invalid!");
 }
-void TransactionService::updateTransaction(int id, QDate date, double amount,
-                       int id_account, int id_accountTo){
+void TransactionService::updateTransaction(const int id, const QDate& date, const double amount,
+                       const int id_account, const int id_accountTo, const QString& description){
     // check id
     if(!isPresent(id_account, m_account_repo.get())){
         throw std::invalid_argument("Update: There is no source account!");
@@ -72,7 +74,7 @@ void TransactionService::updateTransaction(int id, QDate date, double amount,
         throw std::invalid_argument("Update: There is no destination account!");
     }
     // this may throw
-    auto tran = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo);
+    auto tran = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description);
     m_transaction_repo->update(tran);
 }
 void TransactionService::deleteObj(const int id){
@@ -82,7 +84,7 @@ void TransactionService::getTransactionView(QTextBrowser* browser) const{
     if(browser == nullptr){
         return;
     }
-    browser->append("id   Date   Amount   Id account   Id account To\n");
+    browser->append("id   Date   Amount   Id account   Id account To   Description\n");
     std::vector<Transaction> res = m_transaction_repo->transactionView();
     for(const Transaction& t : res){
         browser << t;
@@ -118,11 +120,11 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
 /***********************************************************
  *                      MAKE A TRANSACTION
  ************************************************************/
-void TransactionService::requestTransaction(const int id_account, const int id_accountTo, const double amount){
-    Transaction tempTran(INT_MAX, QDate::currentDate(), amount, id_account, id_accountTo);
+void TransactionService::requestTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description){
+    Transaction tempTran(INT_MAX, QDate::currentDate(), amount, id_account, id_accountTo, description);
     const bool suspicious = isTransactionSuspicious(tempTran);
 }
-void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount) {
+void TransactionService::makeTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description) {
     const int id = m_session->getUserId();
     if(id <= 0){
         const QString message = "User's id is invalid! id = " + QString::number(id);
@@ -184,7 +186,7 @@ void TransactionService::makeTransaction(const int id_account, const int id_acco
 
         // 8. Create History Record
         // We do this LAST to ensure the math worked first
-        insertTransaction(QDate::currentDate(), amount, id_account, id_accountTo);
+        insertTransaction(QDate::currentDate(), amount, id_account, id_accountTo, description);
 
         // 9. COMMIT TRANSACTION
         if (!db->commit()) {
@@ -232,7 +234,7 @@ void TransactionService::handleTransactionChecked(bool isSuspicious, const doubl
     qDebug() << score << " " << isSuspicious;
     if(!isSuspicious){
         try {
-            makeTransaction(t.getIdAccount(), t.getIdAccountTo(), t.getAmount());
+            makeTransaction(t.getIdAccount(), t.getIdAccountTo(), t.getAmount(), t.getDescription());
             emit createMessageBox("Transaction successful!");
         } catch (const std::exception& e) {
             emit createMessageBox(e.what());
@@ -249,7 +251,7 @@ void TransactionService::handleTransactionChecked(bool isSuspicious, const doubl
 
         // 1. SAVE THE STATE
         // We copy the raw data into our member variable
-        m_pendingTx = PendingTx{ t.getIdAccount(), t.getIdAccountTo(), t.getAmount() };
+        m_pendingTx = PendingTx{ t.getIdAccount(), t.getIdAccountTo(), t.getAmount(), t.getDescription()};
 
         // 2. TRIGGER VERIFICATION
         if (m_session->isLoggedIn()) {
@@ -274,7 +276,7 @@ void TransactionService::handleUserVerification(){
 
     // 3. EXECUTE
     try {
-        makeTransaction(tx.fromAccount, tx.toAccount, tx.amount);
+        makeTransaction(tx.fromAccount, tx.toAccount, tx.amount, tx.description);
         emit createMessageBox("Identity Verified. Transaction executed successfully.");
     } catch (const std::exception& e) {
         emit createMessageBox((QString("Transaction failed after verification: ") + e.what()).toStdString().c_str());

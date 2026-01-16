@@ -452,7 +452,7 @@ void MainWindow::on_actionAdd_the_amount_loan_to_the_account_triggered(){
     }
 }
 void MainWindow::on_actionMake_transaction_triggered(){
-    std::vector<QString> names = {"Destination Account Id", "Amount"};
+    std::vector<QString> names = {"Destination Account Id", "Amount", "Description"};
     QList<ComboData> comboData;
     comboData.push_back({"Source Account Id", getAccountsForUser()});
     std::unordered_map<QString, QString> dlg = createDialogInsert("Make a transaction",
@@ -461,7 +461,7 @@ void MainWindow::on_actionMake_transaction_triggered(){
         try{
             m_transaction_service->requestTransaction(dlg["Source Account Id"].toInt(),
                                                    dlg["Destination Account Id"].toInt(),
-                                                   dlg["Amount"].toDouble());
+                                                   dlg["Amount"].toDouble(), dlg["Description"]);
         }catch(const std::runtime_error& e){
             createMessageBox(e.what());
             qDebug() << e.what();
@@ -610,7 +610,7 @@ void MainWindow::on_actionInsert_Account_triggered(){
     }
 }
 void MainWindow::on_actionInsert_Transaction_triggered(){
-    std::vector<QString> names = {"Date (yyyy-MM-dd)", "Amount", "Source Account", "Destination Account"};
+    std::vector<QString> names = {"Date (yyyy-MM-dd)", "Amount", "Source Account", "Destination Account", "Description"};
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the transaction", names);
     if(res.size() != 0){
         int id = 0;
@@ -618,7 +618,8 @@ void MainWindow::on_actionInsert_Transaction_triggered(){
             id = m_transaction_service->insertTransaction(QDate::fromString(res["Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
                                                      res["Amount"].toDouble(),
                                                      res["Source Account"].toInt(),
-                                                     res["Destination Account"].toInt());
+                                                     res["Destination Account"].toInt(),
+                                                     res["Description"]);
         }catch(const std::invalid_argument& e){
             createMessageBox(e.what());
             qDebug() << e.what();
@@ -706,7 +707,8 @@ void MainWindow::updateTransaction(QVector<QString> object){
                                              QDate::fromString(object[1], "ddd MMM d yyyy"),
                                              object[2].toDouble(),
                                              object[3].toInt(),
-                                             object[4].toInt());
+                                             object[4].toInt(),
+                                             object[5]);
 }
 void MainWindow::updateLoan(QVector<QString> object){
     // this may throw (will be caught in updateHelper)

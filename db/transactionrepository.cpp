@@ -122,7 +122,8 @@ std::vector<Transaction> TransactionRepository::transactionView() const{
                                         query.value(1).toDate(),
                                         query.value(2).toDouble(),
                                         query.value(3).toInt(),
-                                        query.value(4).toInt());
+                                        query.value(4).toInt(),
+                                        query.value(5).toString());
             res.push_back(t);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -147,7 +148,8 @@ std::vector<Transaction> TransactionRepository::getTransactionsForAccount(const 
                                         query.value(1).toDate(),
                                         query.value(2).toDouble(),
                                         query.value(3).toInt(),
-                                        query.value(4).toInt());
+                                        query.value(4).toInt(),
+                                        query.value(5).toString());
             res.push_back(t);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();

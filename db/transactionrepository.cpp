@@ -157,3 +157,30 @@ std::vector<Transaction> TransactionRepository::getTransactionsForAccount(const 
     }
     return res;
 }
+
+void TransactionRepository::updateTransactionCategory(const int id, const QString& category, const QString& icon){
+    if(id <= 0)
+        throw std::invalid_argument("updateTransactionCategory: the id is invalid!");
+    QSqlQuery query;
+    query.prepare("UPDATE public.\"Transaction\" SET icon = :icon, category = :category WHERE id_transaction = :id");
+    query.bindValue(":icon", icon);
+    query.bindValue(":category", category);
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+}
+std::pair<QString, QString> TransactionRepository::getTransactionCategoryIcon(const int id){
+    if(id <= 0)
+        throw std::invalid_argument("getTransactionCategoryIcon: the id is invalid!");
+    QSqlQuery query;
+    query.prepare("SELECT category, icon FROM public.\"Transaction\" WHERE id_transaction = :id");
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    if (query.next())
+        return std::make_pair(query.value(0).toString(), query.value(1).toString());
+    else
+        return std::make_pair(QString(), QString());
+}

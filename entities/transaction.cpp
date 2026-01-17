@@ -1,4 +1,5 @@
 #include "transaction.h"
+#include "db/transactionrepository.h"
 
 Transaction::Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo, const QString& description):
     Entity(id)
@@ -62,4 +63,23 @@ void Transaction::setDescription(const QString& description){
         throw std::invalid_argument("The description is empty!");
     }
     m_description = description;
+}
+
+void operator<<(QTextBrowser* browser, const Transaction& t){
+    std::pair<QString, QString> categorized;
+    try{
+        categorized = TransactionRepository::getTransactionCategoryIcon(t.getId());
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+    }
+    QString res;
+    res += QString::number(t.getId()) + "   ";
+    res += t.getDate().toString() + "   ";
+    res += QString::number(t.getAmount()) + "   ";
+    res += QString::number(t.getIdAccount()) + "   ";
+    res += QString::number(t.getIdAccountTo()) + "   ";
+    res += t.getDescription() + "   ";
+    res += categorized.first + "   ";
+    res += categorized.second + '\n';
+    browser->append(res);
 }

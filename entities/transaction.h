@@ -33,14 +33,5 @@ inline QDebug operator<<(QDebug os, const Transaction& t){
        << t.getIdAccountTo() << " " << t.getDescription();
     return os;
 }
-inline void operator<<(QTextBrowser* browser, const Transaction& t){
-    QString res;
-    res += QString::number(t.getId()) + "   ";
-    res += t.getDate().toString() + "   ";
-    res += QString::number(t.getAmount()) + "   ";
-    res += QString::number(t.getIdAccount()) + "   ";
-    res += QString::number(t.getIdAccountTo()) + "   ";
-    res += t.getDescription() + '\n';
-    browser->append(res);
-}
+void operator<<(QTextBrowser* browser, const Transaction& t);
 #endif // TRANSACTION_H

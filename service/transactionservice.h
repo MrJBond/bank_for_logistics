@@ -40,6 +40,7 @@ public:
 private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleTransactionChecked(bool isSuspicious, const double score, const Transaction& t);
+    void handleTransactionCategorized(const QString& category, const QString& icon, const Transaction& t);
     // Call this when Face ID returns success
     void handleUserVerification();
 

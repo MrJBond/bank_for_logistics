@@ -12,6 +12,8 @@ TransactionService::TransactionService() {
             this, &TransactionService::handleUserVerification);
     connect(m_session, &UserSession::verificationFailed,
             this, &TransactionService::cancelPendingTransaction);
+    connect(m_fraudDetector.get(), &FraudDetector::transactionCategorized,
+            this, &TransactionService::handleTransactionCategorized);
 }
 void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
@@ -59,6 +61,7 @@ int TransactionService::insertTransaction(const QDate& date, const double amount
     }
     if(ok && isAccount && isAccountTo){
         m_transaction_repo->insert(tran);
+        m_fraudDetector->requestTransactionCategorization(*tran);
         return tran->getId();
     }
     else
@@ -291,5 +294,16 @@ void TransactionService::cancelPendingTransaction() {
         qDebug() << "Pending transaction cancelled.";
         m_pendingTx.reset();
         emit createMessageBox("The Identity has NOT been Verified! Transaction cancelled!");
+    }
+}
+void TransactionService::handleTransactionCategorized(const QString& category, const QString& icon, const Transaction& t){
+    qDebug() << "TransactionService: " << category << " " << icon;
+    try{
+        m_transaction_repo->updateTransactionCategory(t.getId(), category, icon);
+    }catch(const std::exception& e){
+        const QString error = "Failed to put the icon and the category to the transaction with id = "
+                              + QString::number(t.getId());
+        emit createMessageBox(error.toStdString().c_str());
+        qDebug() << "TransactionService: " << error;
     }
 }

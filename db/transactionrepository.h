@@ -16,6 +16,8 @@ public:
     void remove(int id) override;
     std::vector<Transaction> transactionView() const;
     std::vector<Transaction> getTransactionsForAccount(const int id_account) const;
+    void updateTransactionCategory(const int id, const QString& category, const QString& icon);
+    static std::pair<QString, QString> getTransactionCategoryIcon(const int id);
 };
 
 #endif // TRANSACTIONREPOSITORY_H

@@ -7,6 +7,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 
 class NetworkManager : public QObject
 {

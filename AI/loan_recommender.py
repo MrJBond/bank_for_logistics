@@ -404,6 +404,37 @@ def categorize_transaction():
         return jsonify({'category': 'Error', 'icon': '⚠️'})
 
 # -------------------------------------------------------------------
+# ENDPOINT: BATCH CATEGORIZE
+# -------------------------------------------------------------------
+@app.route('/categorize-list', methods=['POST'])
+def categorize_transaction_list():
+    try:
+        data = request.get_json()
+        descriptions = data.get('descriptions', [])
+        if not descriptions:
+            return jsonify({'results': []})
+        # 1. Batch Predict (Vectorized = Fast)
+        predictions = category_model.predict(descriptions)
+        icons = {
+            "Food": "🍔",
+            "Transport": "🚖",
+            "Bills": "💡",
+            "Shopping": "🛒"
+        }
+        results = []
+        # 2. Build Response List (Preserving Order)
+        for i, cat in enumerate(predictions):
+            icon = icons.get(cat, "💳")
+            results.append({
+                'category': cat,
+                'icon': icon
+            })
+        return jsonify({'results': results})
+    except Exception as e:
+        print(f"Batch Categorization Error: {e}", flush=True)
+        return jsonify({'error': str(e)}), 500
+
+# -------------------------------------------------------------------
 # SECTION 7: RUN THE SERVER
 # -------------------------------------------------------------------
 

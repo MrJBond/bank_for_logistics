@@ -43,6 +43,7 @@ void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const
         }
     }
 }
+//#define CATEGORIZE_ALL
 int TransactionService::insertTransaction(const QDate& date, const double amount,
                                            const int id_account, const int id_accountTo, const QString& description){
     std::shared_ptr<Transaction> tran = std::make_shared<Transaction>();
@@ -61,7 +62,17 @@ int TransactionService::insertTransaction(const QDate& date, const double amount
     }
     if(ok && isAccount && isAccountTo){
         m_transaction_repo->insert(tran);
+#ifdef CATEGORIZE_ALL
+        auto allTrans = m_transaction_repo->getAll();
+        std::vector<Transaction> trans;
+        for(const auto& ent : allTrans){
+            if(Transaction *t = dynamic_cast<Transaction*>(ent.get()); t)
+                trans.push_back(*t);
+        }
+        m_fraudDetector->requestTransactionCategorization(trans);
+#else
         m_fraudDetector->requestTransactionCategorization(*tran);
+#endif
         return tran->getId();
     }
     else

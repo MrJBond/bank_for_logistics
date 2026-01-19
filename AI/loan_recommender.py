@@ -165,10 +165,32 @@ def get_loan_recommendation_score(input_data):
 # In a real app, you'd load this from a database.
 # Here, we hardcode some training data to teach the bot.
 train_data = [
-    ("Uber request", "Transport"), ("Lyft ride", "Transport"), ("Shell Station", "Transport"),
-    ("McDonalds", "Food"), ("Starbucks", "Food"), ("Burger King", "Food"), ("Whole Foods", "Food"),
-    ("Netflix Subscription", "Bills"), ("Electric Bill", "Bills"), ("Rent payment", "Bills"),
-    ("Walmart", "Shopping"), ("Amazon", "Shopping"), ("Target", "Shopping"), ("Nike Store", "Shopping")
+    # Transport
+    ("Uber request", "Transport"), ("Uber", "Transport"), ("Lyft ride", "Transport"),
+    ("Shell Station", "Transport"), ("Shell", "Transport"), ("Gas", "Transport"), ("Gas Station", "Transport"),
+    ("Bus Ticket", "Transport"), ("Train", "Transport"),
+
+    # Food
+    ("McDonalds", "Food"), ("Mcdonalds", "Food"), ("Starbucks", "Food"),
+    ("Burger King", "Food"), ("Whole Foods", "Food"), ("Dinner", "Food"), ("Lunch", "Food"),
+
+    # Bills
+    ("Netflix Subscription", "Bills"), ("Netflix", "Bills"), ("Spotify", "Bills"),
+    ("Electric Bill", "Bills"), ("Rent payment", "Bills"), ("Water Bill", "Bills"), ("Phone Bill", "Bills"),
+
+    # Shopping
+    ("Walmart", "Shopping"), ("Amazon", "Shopping"), ("Target", "Shopping"), ("Nike Store", "Shopping"),
+    ("Clothes", "Shopping"),
+
+    # Transfers
+    ("Money Transfer", "Transfer"), ("Sent to Account", "Transfer"),
+    ("Wire Transfer", "Transfer"), ("Payment to", "Transfer"), ("Transfer", "Transfer"),
+
+    # Cash/ATM
+    ("ATM Withdrawal", "Cash"), ("Cash out", "Cash"), ("ATM", "Cash"),
+
+    # Income/Salary
+    ("Salary Deposit", "Income"), ("Paycheck", "Income"), ("Income", "Income")
 ]
 
 # Split into X (text) and y (labels)
@@ -178,7 +200,9 @@ y_train_labels = [t[1] for t in train_data]
 # Create a Pipeline:
 # 1. Vectorizer: Converts text to frequency matrix
 # 2. Classifier: Naive Bayes
-category_model = make_pipeline(CountVectorizer(), MultinomialNB())
+# analyzer='char_wb': Look at characters inside word boundaries
+# ngram_range=(3, 5): Look at patterns of 3 to 5 letters (e.g., "Net", "etfl", "lix")
+category_model = make_pipeline(CountVectorizer(analyzer='char_wb', ngram_range=(3, 5)), MultinomialNB())
 category_model.fit(X_train_text, y_train_labels)
 
 print("Transaction Categorizer Model trained!", flush=True)
@@ -386,50 +410,79 @@ def categorize_transaction():
     try:
         data = request.get_json()
         description = data.get('description', '')
+
         if not description:
             return jsonify({'category': 'Unknown', 'icon': '❓'})
-        # Predict
-        category = category_model.predict([description])[0]
-        # Map category to Icon
+
+        # 1. Get Probabilities
+        probs = category_model.predict_proba([description])[0]
+        classes = category_model.classes_
+
+        max_prob = np.max(probs)
+        max_index = np.argmax(probs)
+        predicted_cat = classes[max_index]
+
+        # 2. Confidence Check (lowered slightly to 0.35 due to char-grams being more "fuzzy")
+        if max_prob < 0.35:
+            final_cat = "Unknown"
+        else:
+            final_cat = predicted_cat
+
         icons = {
-            "Food": "🍔",
-            "Transport": "🚖",
-            "Bills": "💡",
-            "Shopping": "🛒"
+            "Food": "🍔", "Transport": "🚖", "Bills": "💡", "Shopping": "🛒",
+            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔"
         }
-        icon = icons.get(category, "💳")
-        return jsonify({'category': category, 'icon': icon})
+        icon = icons.get(final_cat, "💳")
+
+        return jsonify({'category': final_cat, 'icon': icon, 'confidence': float(max_prob)})
+
     except Exception as e:
         print(f"Categorization Error: {e}", flush=True)
         return jsonify({'category': 'Error', 'icon': '⚠️'})
 
-# -------------------------------------------------------------------
+
+# ---------------------------------------------------------
 # ENDPOINT: BATCH CATEGORIZE
-# -------------------------------------------------------------------
+# ---------------------------------------------------------
 @app.route('/categorize-list', methods=['POST'])
 def categorize_transaction_list():
     try:
         data = request.get_json()
         descriptions = data.get('descriptions', [])
+
         if not descriptions:
             return jsonify({'results': []})
-        # 1. Batch Predict (Vectorized = Fast)
-        predictions = category_model.predict(descriptions)
+
+        probs_list = category_model.predict_proba(descriptions)
+        classes = category_model.classes_
+
         icons = {
-            "Food": "🍔",
-            "Transport": "🚖",
-            "Bills": "💡",
-            "Shopping": "🛒"
+            "Food": "🍔", "Transport": "🚖", "Bills": "💡", "Shopping": "🛒",
+            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔"
         }
+
         results = []
-        # 2. Build Response List (Preserving Order)
-        for i, cat in enumerate(predictions):
-            icon = icons.get(cat, "💳")
+
+        for i, probs in enumerate(probs_list):
+            max_prob = np.max(probs)
+            max_index = np.argmax(probs)
+            predicted_cat = classes[max_index]
+
+            if max_prob < 0.35:
+                final_cat = "Unknown"
+            else:
+                final_cat = predicted_cat
+
+            icon = icons.get(final_cat, "💳")
+
             results.append({
-                'category': cat,
-                'icon': icon
+                'category': final_cat,
+                'icon': icon,
+                'confidence': float(max_prob)
             })
+
         return jsonify({'results': results})
+
     except Exception as e:
         print(f"Batch Categorization Error: {e}", flush=True)
         return jsonify({'error': str(e)}), 500

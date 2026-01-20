@@ -184,3 +184,15 @@ std::pair<QString, QString> TransactionRepository::getTransactionCategoryIcon(co
     else
         return std::make_pair(QString(), QString());
 }
+std::vector<std::pair<QString, double>> TransactionRepository::getSpendingChartData() const{
+    std::vector<std::pair<QString, double>> res;
+    QSqlQuery query;
+    if(!query.exec("SELECT category, SUM(amount) FROM \"Transaction\" GROUP BY category")){
+        throw std::runtime_error(query.lastError().text().toStdString());
+    }
+    while(query.next()){
+        const std::pair<QString, double> p = std::make_pair(query.value(0).toString(), query.value(1).toDouble());
+        res.push_back(p);
+    }
+    return res;
+}

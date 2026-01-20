@@ -104,6 +104,9 @@ void TransactionService::getTransactionView(QTextBrowser* browser) const{
         browser << t;
     }
 }
+/*****************************************************************
+                            CHARTS
+ ****************************************************************/
 void TransactionService::buildTransactionsChart(const int w, const int h) const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
     QStringList categories;
@@ -130,7 +133,55 @@ void TransactionService::buildTransactionsChart(const int w, const int h) const{
     QChartView* barChart = createBarChart(barSet, "Account Transactions", categories, toolTipText);
     createChartBox(barChart, w, h);
 }
+void TransactionService::buildSpendingPieChart(const int w, const int h) const{
+    std::vector<std::pair<QString, double>> data;
+    try{
+        data = m_transaction_repo->getSpendingChartData();
+    }catch(const std::runtime_error& e){
+        qDebug() << e.what();
+    }
+    if(!data.empty()){
+        QPieSeries *series = new QPieSeries();
+        // 1. Build the Series
+        for (const auto& entry : data) {
+            QString categoryName = entry.first;
+            double amount = entry.second;
+            // If the category is empty/null, label it "Uncategorized"
+            if (categoryName.isEmpty()) categoryName = "Uncategorized";
+            // Add slice to series
+            QPieSlice *slice = series->append(categoryName, amount);
+            // Add the amount to the label (e.g., "Food: $150")
+            slice->setLabel(QString("%1: $%2").arg(categoryName).arg(amount));
+            // Make the label visible
+            slice->setLabelVisible(true);
+        }
+        // 2. Visual Polish: Explode the largest slice
+        if (!series->slices().isEmpty()) {
+            QPieSlice *largestSlice = nullptr;
+            double maxVal = -1.0;
 
+            for (QPieSlice *slice : series->slices()) {
+                if (slice->value() > maxVal) {
+                    maxVal = slice->value();
+                    largestSlice = slice;
+                }
+            }
+
+            if (largestSlice) {
+                largestSlice->setExploded(true); // Pull it out slightly
+                largestSlice->setLabelVisible(true);
+                largestSlice->setPen(QPen(Qt::darkGray, 2)); // Add a border
+            }
+        }
+        // 3. Set Donut Style
+        series->setHoleSize(0.35);
+        // Create and Configure the Chart
+        QChart *chart = new QChart();
+        QStringList categories;
+        QChartView* chartView = setChartAndAxisProperties(chart, series, "Spending chart", categories);
+        createChartBox(chartView, w, h);
+    }
+}
 /***********************************************************
  *                      MAKE A TRANSACTION
  ************************************************************/

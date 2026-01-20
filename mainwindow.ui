@@ -183,6 +183,7 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionTotal_currencyChart"/>
     <addaction name="actionIncome_Expenses"/>
     <addaction name="actionBalance_History"/>
+    <addaction name="actionSpendingChart"/>
    </widget>
    <widget class="QMenu" name="menuChat">
     <property name="title">
@@ -493,6 +494,11 @@ amount of account balances</string>
   <action name="actionTake_loan">
    <property name="text">
     <string>Take loan</string>
+   </property>
+  </action>
+  <action name="actionSpendingChart">
+   <property name="text">
+    <string>Spending </string>
    </property>
   </action>
  </widget>

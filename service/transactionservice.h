@@ -37,6 +37,7 @@ public:
     void requestTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description);
     // charts
     void buildTransactionsChart(const int w, const int h) const;
+    void buildSpendingPieChart(const int w, const int h) const;
 private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleTransactionChecked(bool isSuspicious, const double score, const Transaction& t);

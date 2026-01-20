@@ -898,6 +898,9 @@ void MainWindow::on_actionBalance_History_triggered(){
         qDebug() << e.what();
     }
 }
+void MainWindow::on_actionSpendingChart_triggered(){
+    m_transaction_service->buildSpendingPieChart(this->width(), this->height());
+}
 /****************************************************
      *                      AI Lab2
 ****************************************************/

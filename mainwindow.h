@@ -64,6 +64,7 @@ private slots:
     void on_actionRecommend_loan_amount_triggered();
     void on_actionMake_transaction_triggered();
     void on_actionTake_loan_triggered();
+    void on_actionSearch_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();
@@ -161,6 +162,8 @@ private:
     void stopPythonServer();
     QProcess *m_pythonServerProcess = nullptr;
     QTextEdit* m_chatHistory = nullptr;
+
+    QSortFilterProxyModel* setTabWidget(AbstractService* service, QTabWidget *tabWidget, const QString& name);
 };
 
 #endif // MAINWINDOW_H

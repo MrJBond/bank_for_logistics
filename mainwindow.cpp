@@ -496,6 +496,51 @@ void MainWindow::on_actionTake_loan_triggered(){
         createMessageBox("Loan operation failed!");
     }
 }
+
+QSortFilterProxyModel* MainWindow::setTabWidget(AbstractService* service, QTabWidget *tabWidget, const QString& name){
+    QTableWidget *table = new QTableWidget();
+    try{
+        service->getAll(nullptr, table);
+    }
+    catch(const std::exception& e)
+    {
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+    QTableView* tableView = new QTableView();
+    QSortFilterProxyModel* proxyModel = new QSortFilterProxyModel();
+    proxyModel->setSourceModel(table->model());
+    // Set filter to be case-insensitive (A == a)
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    // Tell it to search all columns (or specific one, e.g., Description is column 5)
+    proxyModel->setFilterKeyColumn(-1); // -1 means search all columns
+    tableView->setModel(proxyModel);
+    const int n = tabWidget->addTab(tableView, name);
+    Q_UNUSED(n);
+    return proxyModel;
+}
+void MainWindow::on_actionSearch_triggered(){
+    QDialog dlg(this);
+    QFormLayout * layout = new QFormLayout();
+    createDialogBox("Search", dlg, layout);
+    std::vector<QLineEdit*> lineEdit = createLineEdits({"Search"}, dlg, layout);
+    QTabWidget *tabWidget = new QTabWidget();
+    QSortFilterProxyModel* a = setTabWidget(m_account_service.get(), tabWidget, "Accounts");
+    QSortFilterProxyModel* c = setTabWidget(m_client_service.get(), tabWidget, "Clients");
+    QSortFilterProxyModel* l = setTabWidget(m_loan_service.get(), tabWidget, "Loans");
+    QSortFilterProxyModel* t = setTabWidget(m_transaction_service.get(), tabWidget, "Transactions");
+    connect(lineEdit[0], &QLineEdit::textChanged, this, [&](const QString& arg1){
+        // This creates a regex so "Food" matches "food", "Seafood", etc.
+        QRegularExpression regex(arg1, QRegularExpression::CaseInsensitiveOption);
+        a->setFilterRegularExpression(regex);
+        c->setFilterRegularExpression(regex);
+        l->setFilterRegularExpression(regex);
+        t->setFilterRegularExpression(regex);
+    });
+    layout->addWidget(tabWidget);
+    dlg.resize(this->width(), this->height());
+    dlg.exec();
+}
 /***********************************************
                     REPORTS
  *************************************************/

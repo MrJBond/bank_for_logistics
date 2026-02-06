@@ -18,8 +18,8 @@ TransactionService::TransactionService() {
 void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
     if(table != nullptr){
-        table->setColumnCount(6);
-        table->setHorizontalHeaderLabels({"id", "Date", "Amount", "Id account", "Id account To", "Description"});
+        table->setColumnCount(8);
+        table->setHorizontalHeaderLabels({"id", "Date", "Amount", "Id account", "Id account To", "Description", "Category", "Icon"});
         table->setRowCount(res.size());
     }
     if(browser != nullptr)
@@ -32,6 +32,12 @@ void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const
             if(browser != nullptr)
                 browser << *transact;
             if(table != nullptr){
+                std::pair<QString, QString> categorized;
+                try{
+                    categorized = TransactionRepository::getTransactionCategoryIcon(transact->getId());
+                }catch(const std::exception& e){
+                    qDebug() << e.what();
+                }
                 table->setItem(i, 0, new QTableWidgetItem(QString::number(transact->getId())));
                 table->item(i,0)->setFlags(table->item(i,0)->flags() & ~Qt::ItemIsEditable);
                 table->setItem(i, 1, new QTableWidgetItem(transact->getDate().toString()));
@@ -39,6 +45,8 @@ void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const
                 table->setItem(i, 3, new QTableWidgetItem(QString::number(transact->getIdAccount())));
                 table->setItem(i, 4, new QTableWidgetItem(QString::number(transact->getIdAccountTo())));
                 table->setItem(i, 5, new QTableWidgetItem(transact->getDescription()));
+                table->setItem(i, 6, new QTableWidgetItem(categorized.first));
+                table->setItem(i, 7, new QTableWidgetItem(categorized.second));
             }
         }
     }

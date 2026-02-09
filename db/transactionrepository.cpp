@@ -196,3 +196,30 @@ std::vector<std::pair<QString, double>> TransactionRepository::getSpendingChartD
     }
     return res;
 }
+
+std::vector<std::pair<QDate, double>> TransactionRepository::getMonthlySpendingHistory(const int accountId) const {
+    std::vector<std::pair<QDate, double>> history;
+    QSqlQuery query;
+    // PostgreSQL Query:
+    // 1. Filter by account
+    // 2. Filter only "Money Out" (id_account)
+    // 3. Group by Month (YYYY-MM)
+    // 4. Order by Date ASC (Oldest -> Newest)
+    query.prepare(R"(
+        SELECT TO_CHAR(date_transaction, 'YYYY-MM'), SUM(amount)
+        FROM public."Transaction"
+        WHERE id_account = :id
+        GROUP BY TO_CHAR(date_transaction, 'YYYY-MM')
+        ORDER BY TO_CHAR(date_transaction, 'YYYY-MM') ASC
+        LIMIT 12
+    )");
+    query.bindValue(":id", accountId);
+    if(query.exec()) {
+        while(query.next()) {
+            const QDate date = QDate::fromString(query.value(0).toString(), "yyyy-MM");
+            const std::pair<QDate, double> p = std::make_pair(date, query.value(1).toDouble());
+            history.push_back(p);
+        }
+    }
+    return history;
+}

@@ -6,12 +6,14 @@
 #include "qtextbrowser.h"
 #include "service/abstractservice.h"
 #include "AI/frauddetector.h"
+#include "AI/loanrecommender.h"
 
 class TransactionService : public AbstractService
 {
 private:
     std::shared_ptr<TransactionRepository> m_transaction_repo = nullptr;
     std::shared_ptr<FraudDetector> m_fraudDetector = nullptr;
+    std::unique_ptr<LoanRecommender> m_loanRecommender = nullptr;
     // fraud detection
     bool isTransactionSuspicious(const Transaction& transaction);
     void makeTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description);
@@ -38,6 +40,8 @@ public:
     // charts
     void buildTransactionsChart(const int w, const int h) const;
     void buildSpendingPieChart(const int w, const int h) const;
+
+    void getSpendingForecastData() const;
 private slots:
     void handleNetworkFailure(const QString& errorString);
     void handleTransactionChecked(bool isSuspicious, const double score, const Transaction& t);

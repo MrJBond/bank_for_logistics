@@ -4,6 +4,7 @@
 TransactionService::TransactionService() {
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
     m_fraudDetector = std::make_shared<FraudDetector>();
+    m_loanRecommender = std::make_unique<LoanRecommender>();
     connect(m_fraudDetector.get(), &FraudDetector::networkError,
             this, &TransactionService::handleNetworkFailure);
     connect(m_fraudDetector.get(), &FraudDetector::transactionChecked,
@@ -14,6 +15,21 @@ TransactionService::TransactionService() {
             this, &TransactionService::cancelPendingTransaction);
     connect(m_fraudDetector.get(), &FraudDetector::transactionCategorized,
             this, &TransactionService::handleTransactionCategorized);
+
+    // Connect the AI Service back to the UI
+    connect(m_loanRecommender.get(), &LoanRecommender::forecastReceived,
+            this, [this](double prediction, double trend) {
+                qDebug() << "Next Month Prediction: $" << prediction;
+                const QString message = "Next Month Prediction: $" + QString::number(prediction, 'f', 2);
+                emit createMessageBox(message.toStdString().c_str());
+                if (trend > 0) {
+                    emit createMessageBox("Spending is Increasing 📈");
+                } else {
+                   emit createMessageBox("Spending is Decreasing 📉");
+                }
+            });
+    connect(m_loanRecommender.get(), &LoanRecommender::networkError, this,
+            &TransactionService::handleNetworkFailure);
 }
 void TransactionService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_transaction_repo->getAll();
@@ -376,4 +392,32 @@ void TransactionService::handleTransactionCategorized(const QString& category, c
         emit createMessageBox(error.toStdString().c_str());
         qDebug() << "TransactionService: " << error;
     }
+}
+
+void TransactionService::getSpendingForecastData() const {
+    const int id = m_session->getUserId();
+    if (id <= 0) {
+        throw std::runtime_error("Invalid User ID");
+    }
+    // 1. Fetch Accounts
+    const std::vector<Account> accs = ClientRepository::getAccountsForClient(id);
+    // 2. Aggregate History (Use std::map to Auto-Sort by Date)
+    std::map<QDate, double> sortedHistory;
+    for (const Account& a : accs) {
+        const auto history = m_transaction_repo->getMonthlySpendingHistory(a.getId());
+        for (const auto& entry : history) {
+            const double amountInBaseCurrency = Entity::toDollar(entry.second, a.getCurrency());
+            // Normalize Date to 1st of month to ensure alignment
+            QDate monthKey(entry.first.year(), entry.first.month(), 1);
+            sortedHistory[monthKey] += amountInBaseCurrency;
+        }
+    }
+    // 3. Extract Values (now strictly chronological)
+    std::vector<double> finalHistoryVector;
+    for (const auto& entry : sortedHistory) {
+        finalHistoryVector.push_back(entry.second);
+    }
+    qDebug() << "Final History Vector: " << finalHistoryVector;
+    // 4. Send to Python
+    m_loanRecommender->requestSpendingForecast(finalHistoryVector);
 }

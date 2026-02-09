@@ -98,3 +98,46 @@ void LoanRecommender::recommendLoanAmount(const int id, ClientRepository* repo){
     qDebug() << "existing_debt: " << existing_debt;
     requestLoanRecommendation(avg_income, stability_metric, existing_debt);
 }
+
+void LoanRecommender::requestSpendingForecast(const std::vector<double>& monthlyHistory) {
+    if (monthlyHistory.size() < 2) {
+        emit networkError("Not enough data points (minimum 2 months required).");
+        return;
+    }
+    // 1. Prepare JSON Payload
+    QJsonObject json;
+    QJsonArray arr;
+    for (double amount : monthlyHistory) {
+        arr.append(amount);
+    }
+    json["history"] = arr;
+
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
+
+    // 2. Create Request
+    QNetworkRequest request(QUrl("http://127.0.0.1:5000/forecast-spending"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    // 3. Send Async Request
+    QNetworkReply *reply = m_manager->post(request, data);
+
+    connect(reply, &QNetworkReply::finished, this, [=, this]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray response = reply->readAll();
+            QJsonDocument jsonResponse = QJsonDocument::fromJson(response);
+            QJsonObject obj = jsonResponse.object();
+
+            if (obj["success"].toBool()) {
+                double prediction = obj["prediction"].toDouble();
+                double trend = obj["trend"].toDouble();
+                emit forecastReceived(prediction, trend);
+            } else {
+                emit networkError(obj["error"].toString());
+            }
+        } else {
+            emit networkError("Network Error: " + reply->errorString());
+        }
+        reply->deleteLater();
+    });
+}

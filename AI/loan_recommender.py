@@ -14,6 +14,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LinearRegression
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -442,7 +443,7 @@ def categorize_transaction():
 
 
 # ---------------------------------------------------------
-# ENDPOINT: BATCH CATEGORIZE
+# ENDPOINT 6: BATCH CATEGORIZE
 # ---------------------------------------------------------
 @app.route('/categorize-list', methods=['POST'])
 def categorize_transaction_list():
@@ -486,6 +487,47 @@ def categorize_transaction_list():
     except Exception as e:
         print(f"Batch Categorization Error: {e}", flush=True)
         return jsonify({'error': str(e)}), 500
+
+# -------------------------------------------------------------------
+# ENDPOINT 7: SPENDING FORECAST
+# -------------------------------------------------------------------
+@app.route('/forecast-spending', methods=['POST'])
+def forecast_spending():
+    try:
+        data = request.get_json()
+        # Expecting a list of monthly totals: [500.0, 450.50, 600.0, 550.0, ...]
+        history = data.get('history', [])
+
+        if not history or len(history) < 2:
+            return jsonify({'success': False, 'message': 'Not enough data (need at least 2 months)'})
+
+        # 1. Prepare Data
+        # X = Month Index [0, 1, 2, 3...]
+        # y = Spending Amount [500, 450, 600...]
+        X = np.array(range(len(history))).reshape(-1, 1)
+        y = np.array(history)
+
+        # 2. Train Model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # 3. Predict Next Month
+        next_month_index = len(history)
+        prediction = model.predict([[next_month_index]])[0]
+
+        # 4. Calculate Trend (Slope)
+        # Positive slope = Spending is increasing
+        # Negative slope = Spending is decreasing
+        trend = model.coef_[0]
+
+        return jsonify({
+            'success': True,
+            'prediction': float(prediction),
+            'trend': float(trend)
+        })
+    except Exception as e:
+        print(f"Forecast Error: {e}", flush=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # -------------------------------------------------------------------
 # SECTION 7: RUN THE SERVER

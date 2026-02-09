@@ -65,6 +65,7 @@ private slots:
     void on_actionMake_transaction_triggered();
     void on_actionTake_loan_triggered();
     void on_actionSearch_triggered();
+    void on_actionPredict_my_spending_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();

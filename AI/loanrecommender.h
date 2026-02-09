@@ -13,6 +13,8 @@ private:
 public:
     LoanRecommender();
     void recommendLoanAmount(const int id, ClientRepository* repo);
+    // The function called by TransactionService
+    void requestSpendingForecast(const std::vector<double>& monthlyHistory);
 private slots:
     void handleRecommendation(double score, double averageMonthlyIncome);
 signals:
@@ -27,6 +29,8 @@ signals:
      * @brief Emitted when the score is too low and the loan is rejected.
      */
     void loanRejected();
+
+    void forecastReceived(double prediction, double trend);
 };
 
 

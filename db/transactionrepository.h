@@ -19,6 +19,7 @@ public:
     void updateTransactionCategory(const int id, const QString& category, const QString& icon);
     static std::pair<QString, QString> getTransactionCategoryIcon(const int id);
     std::vector<std::pair<QString, double>> getSpendingChartData() const;
+    std::vector<std::pair<QDate, double>> getMonthlySpendingHistory(const int accountId) const;
 };
 
 #endif // TRANSACTIONREPOSITORY_H

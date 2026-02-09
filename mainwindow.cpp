@@ -541,6 +541,15 @@ void MainWindow::on_actionSearch_triggered(){
     dlg.resize(this->width(), this->height());
     dlg.exec();
 }
+void MainWindow::on_actionPredict_my_spending_triggered(){
+    try{
+        m_transaction_service->getSpendingForecastData();
+    }
+    catch(const std::exception& e){
+        createMessageBox(e.what());
+        qDebug() << e.what();
+    }
+}
 /***********************************************
                     REPORTS
  *************************************************/

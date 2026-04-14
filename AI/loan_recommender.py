@@ -15,6 +15,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
+import logging
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -534,6 +535,10 @@ def forecast_spending():
 # -------------------------------------------------------------------
 
 if __name__ == '__main__':
+    # Force Flask and Werkzeug to write directly to standard error
+    logging.getLogger('werkzeug').disabled = False
+    app.logger.addHandler(logging.StreamHandler(sys.stderr))
+    app.logger.setLevel(logging.DEBUG)
     print("\n=== Final registered routes ===")
     for rule in app.url_map.iter_rules():
         print(f"{rule.endpoint}: {rule.rule} [{', '.join(rule.methods)}]")

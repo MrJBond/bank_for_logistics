@@ -134,11 +134,15 @@ bool UserSession::isLoggedIn() const
 void UserSession::requestUserVerification() const
 {
     if(m_isLoggedIn){
-        FaceCaptureDialog dlg;
-        if (dlg.exec() == QDialog::Accepted) {
-            const QString base64Image = dlg.getCapturedImageBase64();
-            qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
-            m_faceIdService->requestFaceVector(base64Image, true);
+        try{
+            FaceCaptureDialog dlg;
+            if (dlg.exec() == QDialog::Accepted) {
+                const QString base64Image = dlg.getCapturedImageBase64();
+                qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
+                m_faceIdService->requestFaceVector(base64Image, true);
+            }
+        }catch(const std::exception& e){
+            qDebug() << e.what();
         }
     }
 }

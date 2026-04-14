@@ -194,11 +194,15 @@ void MainWindow::attemptLoginBankUser(){
     login(userLogin);
 }
 void MainWindow::loginWithFace(){
-    FaceCaptureDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        const QString base64Image = dlg.getCapturedImageBase64();
-        qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
-        m_client_service->requestFaceVector(base64Image);
+    try{
+        FaceCaptureDialog dlg(this);
+        if (dlg.exec() == QDialog::Accepted) {
+            const QString base64Image = dlg.getCapturedImageBase64();
+            qDebug() << "Image before requesting the face vector: " << base64Image.left(200);
+            m_client_service->requestFaceVector(base64Image);
+        }
+    }catch(const std::exception& e){
+        qDebug() << e.what();
     }
 }
 void MainWindow::attemptSignupBankUser(){
@@ -990,6 +994,23 @@ void MainWindow::startPythonServer()
         qDebug() << "Python Server stdout:" << m_pythonServerProcess->readAllStandardOutput();
     });
 
+    // Detect if the Python server crashes completely
+    connect(m_pythonServerProcess, &QProcess::finished, this, [=](int exitCode, QProcess::ExitStatus exitStatus) {
+        qDebug() << "!!! PYTHON SERVER DIED !!!";
+        qDebug() << "Exit Code:" << exitCode;
+        if (exitStatus == QProcess::CrashExit) {
+            qDebug() << "Exit Status: CRASHED";
+        } else {
+            qDebug() << "Exit Status: Normal Exit";
+        }
+    });
+
+    // Catch state changes
+    connect(m_pythonServerProcess, &QProcess::stateChanged, this, [=](QProcess::ProcessState newState) {
+        if (newState == QProcess::NotRunning) {
+            qDebug() << "Python Server State: Not Running";
+        }
+    });
 
     // Start the process
     m_pythonServerProcess->start(pythonExecutable, args);

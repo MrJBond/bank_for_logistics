@@ -6,6 +6,14 @@ CONFIG += c++20
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+INCLUDEPATH += F:\OpenCV\opencv\build\include
+
+CONFIG(debug, debug|release) {
+    LIBS += -L"F:/OpenCV/opencv/build/x64/vc16/lib" -lopencv_world490d
+} else {
+    LIBS += -L"F:/OpenCV/opencv/build/x64/vc16/lib" -lopencv_world490
+}
+
 include($$PWD/QtRptProject/QtRPT/QtRPT.pri)
 
 SOURCES += \
@@ -14,6 +22,7 @@ SOURCES += \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
     CV/facecapturedialog.cpp \
+    CV/facedetector.cpp \
     auth/faceidservice.cpp \
     auth/usersession.cpp \
     db/accountrepository.cpp \
@@ -41,6 +50,7 @@ HEADERS += \
     AI/loanrecommender.h \
     AI/networkmanager.h \
     CV/facecapturedialog.h \
+    CV/facedetector.h \
     auth/faceidservice.h \
     auth/usersession.h \
     db/accountrepository.h \

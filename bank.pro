@@ -84,4 +84,5 @@ RESOURCES += \
 
 DISTFILES += \
     AI/train_bot.py \
-    AI/loan_recommender.py
+    AI/loan_recommender.py \
+    AI/train_transaction_categorizer.py

@@ -16,6 +16,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 import logging
+import psycopg2
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -110,26 +111,75 @@ score_terms = {
 # -------------------------------------------------------------------
 # SECTION 3: RULE BASE (The Loan Officer's Brain)
 # -------------------------------------------------------------------
-loan_rules = [
-    # Best case scenarios
-    (('income', 'High'), ('stability', 'VeryStable'), ('debt', 'Low'), ('recommendation', 'Large')),
-    (('income', 'High'), ('stability', 'Stable'),     ('debt', 'Low'), ('recommendation', 'Large')),
-    (('income', 'Medium'), ('stability', 'VeryStable'), ('debt', 'Low'), ('recommendation', 'Medium')),
+# -- 1. Create the fuzzy rules table
+# CREATE TABLE IF NOT EXISTS loan_fuzzy_rules (
+#     id SERIAL PRIMARY KEY,
+#     income_level VARCHAR(50),     -- 'High', 'Medium', 'Low' or NULL
+#     stability_level VARCHAR(50),  -- 'VeryStable', 'Stable', 'Unstable' or NULL
+#     debt_level VARCHAR(50),       -- 'High', 'Acceptable', 'Low' or NULL
+#     recommendation VARCHAR(50) NOT NULL
+# );
 
-    # Average scenarios
-    (('income', 'Medium'), ('stability', 'Stable'), ('debt', 'Acceptable'), ('recommendation', 'Small')),
-    (('income', 'High'), ('stability', 'Stable'), ('debt', 'Acceptable'), ('recommendation', 'Medium')),
+# -- 2. Insert the rules
+# INSERT INTO loan_fuzzy_rules (income_level, stability_level, debt_level, recommendation) VALUES
+#     -- Best case scenarios
+#     ('High', 'VeryStable', 'Low', 'Large'),
+#     ('High', 'Stable', 'Low', 'Large'),
+#     ('Medium', 'VeryStable', 'Low', 'Medium'),
 
-    # Risky scenarios
-    (('income', 'Low'), ('stability', 'Stable'), ('debt', 'Low'), ('recommendation', 'Small')),
-    (('income', 'Medium'), ('stability', 'Unstable'), ('debt', 'Acceptable'), ('recommendation', 'Reject')),
-    (('income', 'High'), ('stability', 'VeryStable'), ('debt', 'High'), ('recommendation', 'Small')),
+#     -- Average scenarios
+#     ('Medium', 'Stable', 'Acceptable', 'Small'),
+#     ('High', 'Stable', 'Acceptable', 'Medium'),
 
-    # Rejection scenarios
-    (('stability', 'Unstable'), ('recommendation', 'Reject')),
-    (('debt', 'High'), ('recommendation', 'Reject')),
-    (('income', 'Low'), ('debt', 'Acceptable'), ('recommendation', 'Reject')),
-]
+#     -- Risky scenarios
+#     ('Low', 'Stable', 'Low', 'Small'),
+#     ('Medium', 'Unstable', 'Acceptable', 'Reject'),
+#     ('High', 'VeryStable', 'High', 'Small'),
+
+#     -- Rejection scenarios (the NULLs for conditions we don't care about)
+#     (NULL, 'Unstable', NULL, 'Reject'),
+#     (NULL, NULL, 'High', 'Reject'),
+#     ('Low', NULL, 'Acceptable', 'Reject');
+def load_fuzzy_rules_from_db():
+    print("Fetching fuzzy loan rules from PostgreSQL...")
+    loan_rules = []
+
+    try:
+        conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+        cursor = conn.cursor()
+
+        # Fetch all rules
+        cursor.execute("SELECT income_level, stability_level, debt_level, recommendation FROM loan_fuzzy_rules")
+        rows = cursor.fetchall()
+
+        for row in rows:
+            income, stability, debt, recommendation = row
+
+            # Dynamically build the rule tuple, skipping NULLs
+            current_rule = []
+            if income:
+                current_rule.append(('income', income))
+            if stability:
+                current_rule.append(('stability', stability))
+            if debt:
+                current_rule.append(('debt', debt))
+
+            # The recommendation is always required
+            current_rule.append(('recommendation', recommendation))
+
+            # Convert list to tuple and add to our master list
+            loan_rules.append(tuple(current_rule))
+
+        cursor.close()
+        conn.close()
+        print(f"✅ Successfully loaded {len(loan_rules)} fuzzy rules from DB!")
+        return loan_rules
+
+    except Exception as e:
+        print(f"⚠️ Failed to load rules from DB: {e}")
+        return []
+
+
 # -------------------------------------------------------------------
 # SECTION 4: FUZZY INFERENCE ENGINE (Evaluator)
 # -------------------------------------------------------------------
@@ -146,7 +196,7 @@ def get_loan_recommendation_score(input_data):
     agg_mu = np.zeros_like(output_grid)
 
     # Evaluate rules
-    for rule in loan_rules:
+    for rule in global_loan_rules:
         antecedents = rule[:-1]
         consequent_term = rule[-1][1]
 
@@ -164,56 +214,16 @@ def get_loan_recommendation_score(input_data):
 # ---------------------------------------------------------
 # SECTION 5: TRAIN THE TRANSACTION CATEGORIZE MODEL
 # ---------------------------------------------------------
-# In a real app, you'd load this from a database.
-# Here, we hardcode some training data to teach the bot.
-train_data = [
-    # Transport
-    ("Uber request", "Transport"), ("Uber", "Transport"), ("Lyft ride", "Transport"),
-    ("Shell Station", "Transport"), ("Shell", "Transport"), ("Gas", "Transport"), ("Gas Station", "Transport"),
-    ("Bus Ticket", "Transport"), ("Train", "Transport"),
+# MOVED TO train_transaction_categorizer.py
 
-    # Food
-    ("McDonalds", "Food"), ("Mcdonalds", "Food"), ("Starbucks", "Food"),
-    ("Burger King", "Food"), ("Whole Foods", "Food"), ("Dinner", "Food"), ("Lunch", "Food"),
-
-    # Bills
-    ("Netflix Subscription", "Bills"), ("Netflix", "Bills"), ("Spotify", "Bills"),
-    ("Electric Bill", "Bills"), ("Rent payment", "Bills"), ("Water Bill", "Bills"), ("Phone Bill", "Bills"),
-
-    # Shopping
-    ("Walmart", "Shopping"), ("Amazon", "Shopping"), ("Target", "Shopping"), ("Nike Store", "Shopping"),
-    ("Clothes", "Shopping"),
-
-    # Transfers
-    ("Money Transfer", "Transfer"), ("Sent to Account", "Transfer"),
-    ("Wire Transfer", "Transfer"), ("Payment to", "Transfer"), ("Transfer", "Transfer"),
-
-    # Cash/ATM
-    ("ATM Withdrawal", "Cash"), ("Cash out", "Cash"), ("ATM", "Cash"),
-
-    # Income/Salary
-    ("Salary Deposit", "Income"), ("Paycheck", "Income"), ("Income", "Income")
-]
-
-# Split into X (text) and y (labels)
-X_train_text = [t[0] for t in train_data]
-y_train_labels = [t[1] for t in train_data]
-
-# Create a Pipeline:
-# 1. Vectorizer: Converts text to frequency matrix
-# 2. Classifier: Naive Bayes
-# analyzer='char_wb': Look at characters inside word boundaries
-# ngram_range=(3, 5): Look at patterns of 3 to 5 letters (e.g., "Net", "etfl", "lix")
-category_model = make_pipeline(CountVectorizer(analyzer='char_wb', ngram_range=(3, 5)), MultinomialNB())
-category_model.fit(X_train_text, y_train_labels)
-
-print("Transaction Categorizer Model trained!", flush=True)
 
 # -------------------------------------------------------------------
 # SECTION 6: FLASK SERVER & AI MODEL LOADING
 # -------------------------------------------------------------------
 
 app = Flask(__name__)
+
+global_loan_rules = load_fuzzy_rules_from_db()
 
 # --- Load the AI Chatbot Model (on server startup) ---
 print("Loading AI chatbot model...")
@@ -223,6 +233,14 @@ try:
 except FileNotFoundError:
     print("ERROR: bot_model.joblib not found. Run train_bot.py first!")
     chatbot_model = None
+
+# --- Load the AI transaction categorizer Model (on server startup) ---
+try:
+    category_model = joblib.load('../../AI/transaction_model.joblib')
+    print("✅ Pre-trained categorizer model loaded.")
+except FileNotFoundError:
+    print("⚠️ WARNING: transaction_model.joblib not found. Run train_model.py first!")
+    category_model = None
 
 # -------------------------------------------------------------------
 # ENDPOINT 1: THE AI CHATBOT (Classifier)
@@ -410,6 +428,9 @@ def check_fraud():
 @app.route('/categorize', methods=['POST'])
 def categorize_transaction():
     try:
+        if category_model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+
         data = request.get_json()
         description = data.get('description', '')
 
@@ -449,6 +470,8 @@ def categorize_transaction():
 @app.route('/categorize-list', methods=['POST'])
 def categorize_transaction_list():
     try:
+        if category_model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
         data = request.get_json()
         descriptions = data.get('descriptions', [])
 

@@ -453,7 +453,14 @@ def categorize_transaction():
 
         icons = {
             "Food": "🍔", "Transport": "🚖", "Bills": "💡", "Shopping": "🛒",
-            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔"
+            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔",
+
+            "Fuel": "⛽",         # For gas stations, diesel, charging networks
+            "Maintenance": "🔧",  # For auto repairs, oil changes, spare parts
+            "Tolls": "🛣️",        # For highway tolls, weigh stations, and parking
+            "Lodging": "🏨",      # For driver hotels and overnight stays during long routes
+            "Insurance": "🛡️",    # For cargo insurance, vehicle policies
+            "Customs": "🛂"       # For border fees, tariffs, or port charges
         }
         icon = icons.get(final_cat, "💳")
 
@@ -483,7 +490,14 @@ def categorize_transaction_list():
 
         icons = {
             "Food": "🍔", "Transport": "🚖", "Bills": "💡", "Shopping": "🛒",
-            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔"
+            "Transfer": "💸", "Cash": "🏧", "Income": "💰", "Unknown": "❔",
+
+            "Fuel": "⛽",         # For gas stations, diesel, charging networks
+            "Maintenance": "🔧",  # For auto repairs, oil changes, spare parts
+            "Tolls": "🛣️",        # For highway tolls, weigh stations, and parking
+            "Lodging": "🏨",      # For driver hotels and overnight stays during long routes
+            "Insurance": "🛡️",    # For cargo insurance, vehicle policies
+            "Customs": "🛂"       # For border fees, tariffs, or port charges
         }
 
         results = []

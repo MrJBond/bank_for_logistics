@@ -401,3 +401,40 @@ std::unordered_map<int, QString> ClientRepository::getFaces() const{
     }
     return res;
 }
+std::vector<Route> ClientRepository::getRoutes(const int driver_id) const{
+    if(driver_id <= 0)
+         throw std::invalid_argument("The driver_id is invalid!");
+    std::vector<Route> res;
+    QSqlQuery query;
+    query.prepare("SELECT * FROM logistics_routes WHERE driver_id = :id;");
+    query.bindValue(":id", driver_id);
+    if(!query.exec())
+        throw std::runtime_error(query.lastError().text().toStdString());
+    while(query.next()){
+        const int id = query.value(0).toInt();
+        const int driver = query.value(1).toInt();
+        const QString origin_address = query.value(2).toString();
+        const QString destination_address = query.value(3).toString();
+        const double distance_km = query.value(4).toDouble();
+        const double estimated_hours = query.value(5).toDouble();
+        const QString geoJsonString = query.value(6).toString();
+        const QString status = query.value(7).toString();
+        try{
+            const Route route = Route(id, driver, origin_address,
+                                  destination_address, distance_km,
+                                  estimated_hours, geoJsonString, status);
+            res.push_back(route);
+        }catch(const std::exception& e){
+            qDebug() << "The route id = " << id << " is invalid: " << e.what();
+        }
+    }
+    return res;
+}
+void ClientRepository::updateRouteDriver(const Route& r){
+    QSqlQuery query;
+    query.prepare("UPDATE public.\"logistics_routes\" SET driver_id = :driver_id WHERE id = :id;");
+    query.bindValue(":driver_id", r.getDriverId());
+    query.bindValue(":id", r.getId());
+    if(!query.exec())
+        throw std::runtime_error(query.lastError().text().toStdString());
+}

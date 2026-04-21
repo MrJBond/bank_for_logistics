@@ -8,6 +8,7 @@
 #include "AI/loanrecommender.h"
 #include "AI/chatbot.h"
 #include "auth/faceidservice.h"
+#include "AI/routeplanner.h"
 
 class ClientService : public AbstractService
 {
@@ -25,6 +26,7 @@ private:
     LoanRecommender *m_loanRecommender = nullptr;
     ChatBot *m_chatBot = nullptr;
     FaceIdService *m_faceIdService = nullptr;
+    RoutePlanner *m_routePlanner = nullptr;
 
     void sendToPythonBot(const QString& userText);
 
@@ -67,6 +69,10 @@ public:
             delete m_faceIdService;
             m_faceIdService = nullptr;
         }
+        if(m_routePlanner){
+            delete m_routePlanner;
+            m_routePlanner = nullptr;
+        }
     };
     void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     void getClientsWithTotalSum(QTextBrowser* browser) const;
@@ -89,6 +95,8 @@ public:
 
     bool isClientPresent(const int id) const;
     std::vector<Account> getAccountsForClient(const int id_client) const;
+    std::vector<Route> getRoutes(const int driver_id) const;
+    void planRoute(const QString& origin, const QString& destination, const int driver_id) const;
     /*****************************************************
                             CHARTS
      *****************************************************/
@@ -120,5 +128,6 @@ signals:
     void handleChatReply(const QString& intent, const QString& reply);
     void handleRecommendation(double score, double averageMonthlyIncome);
     void handleUserFaceVector(const QString& vectorJson);
+    void handleRoute(const Route& r);
 };
 #endif // CLIENTSERVICE_H

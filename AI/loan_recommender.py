@@ -17,6 +17,30 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 import logging
 import psycopg2
+import psycopg2.extras
+import requests
+
+# Get a free API key from openrouteservice.org
+ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjFlZDcxY2NlNzc4MjQ3Y2M4YzZlMDAzZTY5NWE4YzQ1IiwiaCI6Im11cm11cjY0In0="
+
+def geocode_address(address_text):
+    """Converts a text address into [longitude, latitude]"""
+    url = "https://api.openrouteservice.org/geocode/search"
+    params = {
+        "api_key": ORS_API_KEY,
+        "text": address_text,
+        "size": 1 # We only want the top result
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if len(data['features']) > 0:
+            # ORS returns coordinates as [Longitude, Latitude]
+            return data['features'][0]['geometry']['coordinates']
+
+    return None # Return None if the address wasn't found
+
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -566,6 +590,70 @@ def forecast_spending():
     except Exception as e:
         print(f"Forecast Error: {e}", flush=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# -------------------------------------------------------------------
+# ENDPOINT 8: PLAN ROUTE
+# -------------------------------------------------------------------
+@app.route('/plan-route', methods=['POST'])
+def plan_route():
+    data = request.get_json()
+
+    # 1. Receive TEXT addresses from C++, not raw coordinates
+    origin_text = data.get('origin_address')
+    dest_text = data.get('destination_address')
+
+    # 2. Geocode the addresses
+    origin_coords = geocode_address(origin_text)
+    dest_coords = geocode_address(dest_text)
+
+    if not origin_coords or not dest_coords:
+        return jsonify({"error": "Could not find coordinates for one or both addresses"}), 400
+
+    # 3. Ask OpenRouteService for the truck route
+    url = "https://api.openrouteservice.org/v2/directions/driving-hgv/geojson"
+    headers = {"Authorization": ORS_API_KEY}
+    payload = {"coordinates": [origin_coords, dest_coords]}
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        print(f"API Error: {response.text}", flush=True)
+        return jsonify({"error": "Failed to calculate route"}), 500
+
+    route_data = response.json()
+
+    # If the API changes its mind or sends weird data, catch it before it crashes!
+    if 'features' not in route_data:
+        print(f"Unexpected API Response: {route_data}", flush=True)
+        return jsonify({"error": "API did not return GeoJSON features"}), 500
+
+    # Extract metrics
+    properties = route_data['features'][0]['properties']
+    distance_km = properties['summary']['distance'] / 1000
+    estimated_hours = properties['summary']['duration'] / 3600
+    geometry = route_data['features'][0]['geometry']
+
+    # 4. Save to PostgreSQL
+    conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO logistics_routes
+        (origin_address, destination_address, distance_km, estimated_hours, route_geometry)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id;
+    """, (origin_text, dest_text, distance_km, estimated_hours, psycopg2.extras.Json(geometry)))
+
+    route_id = cursor.fetchone()[0]
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "success": True,
+        "route_id": route_id,
+        "distance_km": round(distance_km, 2),
+        "estimated_hours": round(estimated_hours, 2),
+        "route_geometry": geometry # Send this back to C++ so Leaflet can draw it
+    })
 
 # -------------------------------------------------------------------
 # SECTION 7: RUN THE SERVER

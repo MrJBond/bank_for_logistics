@@ -23,6 +23,8 @@
 #include "auth/usersession.h"
 #include "CV/facecapturedialog.h"
 #include <QProcess>
+#include <QWebEngineView>
+#include <QWebEnginePage>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -66,6 +68,8 @@ private slots:
     void on_actionTake_loan_triggered();
     void on_actionSearch_triggered();
     void on_actionPredict_my_spending_triggered();
+    void on_actionShow_route_triggered();
+    void on_actionPlan_route_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();
@@ -136,7 +140,7 @@ private:
     QTableWidget* buildTable(QDialog& dlg, const QString& title, AbstractService* service);
     void showTable(QDialog& dlg, QFormLayout *layout, AbstractService* service);
     std::vector<QLineEdit*> createLineEdits(std::vector<QString> names, QDialog& dlg, QFormLayout *layout);
-    void createDialogBox(QString title, QDialog& dlg, QFormLayout *layout);
+    void createDialogBox(QString title, QDialog& dlg, QLayout *layout);
     struct ComboData {
         QString label;
         QStringList options;

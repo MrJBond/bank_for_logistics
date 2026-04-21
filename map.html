@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { padding: 0; margin: 0; }
+        #map { height: 100vh; width: 100vw; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // 1. Initialize the map (Default view: Center of USA)
+        var map = L.map('map').setView([39.8283, -98.5795], 4);
+
+        // 2. Add the free OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var currentRouteLayer = null;
+
+        // 3. This is the function C++ will call!
+        function drawRoute(geoJsonData) {
+            // Remove the old route if one exists
+            if (currentRouteLayer) {
+                map.removeLayer(currentRouteLayer);
+            }
+
+            // Parse the JSON string sent from C++
+            var geoJson = typeof geoJsonData === 'string' ? JSON.parse(geoJsonData) : geoJsonData;
+
+            // Draw the new route (Blue line, 5px thick)
+            currentRouteLayer = L.geoJSON(geoJson, {
+                style: { color: "#007BFF", weight: 5, opacity: 0.8 }
+            }).addTo(map);
+
+            // Automatically zoom and pan to fit the whole route on screen
+            map.fitBounds(currentRouteLayer.getBounds(), { padding: [50, 50] });
+        }
+    </script>
+</body>
+</html>

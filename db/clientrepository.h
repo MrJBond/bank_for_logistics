@@ -3,6 +3,7 @@
 
 #include "entities/account.h"
 #include "entities/client.h"
+#include "entities/route.h"
 #include "abstractrepository.h"
 
 class ClientRepository : public AbstractRepository
@@ -36,6 +37,8 @@ public:
     std::vector<directorView> getDirectorView() const;
     static bool isAccountMine(const int id_client, const int id_account);
     double getTotalCurrentBalance(const int id_client) const; // $
+    std::vector<Route> getRoutes(const int driver_id) const;
+    void updateRouteDriver(const Route& r);
     /****************************************************
      *                      AI Lab2
      ****************************************************/

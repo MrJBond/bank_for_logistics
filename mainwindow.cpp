@@ -245,7 +245,7 @@ void MainWindow::onCreateMessageBox(const char* m){
 /***************************************************************
                     UI helper functions
  ***************************************************************/
-void MainWindow::createDialogBox(QString title, QDialog& dlg, QFormLayout *layout){
+void MainWindow::createDialogBox(QString title, QDialog& dlg, QLayout *layout){
     dlg.setWindowTitle(title);
     QDialogButtonBox *btn_box = new QDialogButtonBox(&dlg);
     btn_box->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -554,6 +554,54 @@ void MainWindow::on_actionPredict_my_spending_triggered(){
         qDebug() << e.what();
     }
 }
+void MainWindow::on_actionPlan_route_triggered(){
+    std::vector<QString> names = {"Origin", "Destination", "Driver ID"};
+    std::unordered_map<QString, QString> res = createDialogInsert("Plan a route", names, m_client_service.get());
+    try{
+        m_client_service->planRoute(res[names[0]], res[names[1]], res[names[2]].toInt());
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+        createMessageBox(e.what());
+    }
+}
+void MainWindow::on_actionShow_route_triggered(){
+    QDialog dlg(this);
+    dlg.resize(this->width(), this->height());
+    QVBoxLayout *layout = new QVBoxLayout();
+    // Set margins to make the map touch the very edges of the dialog
+    layout->setContentsMargins(0, 0, 0, 0);
+    QWebEngineView* mapView = new QWebEngineView(&dlg);
+    // Force the view to expand and fill the layout
+    mapView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    layout->addWidget(mapView);
+
+    // Pass the layout to your custom dialog builder
+    createDialogBox("Map", dlg, layout);
+
+    // Connect to the loadFinished signal BEFORE setting the URL
+    connect(mapView, &QWebEngineView::loadFinished, this, [this, mapView](bool ok) {
+        if (ok) {
+            // Only run the JS after the HTML page is fully loaded
+            auto routes = m_client_service->getRoutes(m_session->getUserId());
+            qDebug() << "Routes size: " << routes.size();
+            for(const Route& r : routes){
+                QString rawJson = r.getGeoJsonString();
+                qDebug() << "Raw JSON:" << rawJson;
+                // 1. Encode the JSON payload into Base64 (Safe for web transport)
+                QString b64Json = rawJson.toUtf8().toBase64();
+                // 2. Tell JavaScript to decode it using its native 'atob()' function
+                QString jsCommand = QString("drawRoute(atob('%1'));").arg(b64Json);
+                mapView->page()->runJavaScript(jsCommand);
+            }
+        } else {
+            qDebug() << "Failed to load map.html";
+        }
+    });
+    // load the URL
+    mapView->setUrl(QUrl("qrc:/map.html"));
+    if (dlg.exec() == QDialog::Accepted) {
+    }
+}
 /***********************************************
                     REPORTS
  *************************************************/
@@ -564,7 +612,7 @@ void MainWindow::on_actionLoanReport_triggered()
         m_loan_service->setFileName("loanReport.xml");
     }catch(const std::invalid_argument& e){
         ok = false;
-        e.what();
+        qDebug() << e.what();
     }
     if(ok){
         try{
@@ -581,7 +629,7 @@ void MainWindow::on_actionClientsWithTotalSumReport_triggered(){
         m_client_service->setFileName("clientTransaction.xml");
     }catch(const std::invalid_argument& e){
         ok = false;
-        e.what();
+        qDebug() << e.what();
     }
     if(ok){
         try{
@@ -598,7 +646,7 @@ void MainWindow::on_actionClientAccountReport_triggered(){
         m_client_service->setFileName("withNested.xml");
     }catch(const std::invalid_argument& e){
         ok = false;
-        e.what();
+        qDebug() << e.what();
     }
     if(ok){
         try{
@@ -652,6 +700,7 @@ void MainWindow::on_actionInsert_Account_triggered(){
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the account", names);
     if(res.size() != 0){
         int id = 0;
+        Q_UNUSED(id);
         try{
             id = m_account_service->insertAccount(res["Client's Id"].toInt(),
                                              res["Amount"].toDouble(),
@@ -672,6 +721,7 @@ void MainWindow::on_actionInsert_Transaction_triggered(){
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the transaction", names);
     if(res.size() != 0){
         int id = 0;
+        Q_UNUSED(id);
         try{
             id = m_transaction_service->insertTransaction(QDate::fromString(res["Date (yyyy-MM-dd)"], "yyyy-MM-dd"),
                                                      res["Amount"].toDouble(),
@@ -694,6 +744,7 @@ void MainWindow::on_actionInsert_Loan_triggered(){
     std::unordered_map<QString, QString> res = createDialogInsert("Insert the loan", names);
     if(res.size() != 0){
         int id = 0;
+        Q_UNUSED(id);
         try{
             id = m_loan_service->insertLoan(res["Account"].toInt(),
                                        QDate::fromString(res["Issue Date (yyyy-MM-dd)"], "yyyy-MM-dd"),

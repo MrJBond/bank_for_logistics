@@ -13,4 +13,7 @@
         <file>reportsFiles/withNested.xml</file>
         <file>reportsFiles/nestedReport.xml</file>
     </qresource>
+    <qresource prefix="/">
+        <file>map.html</file>
+    </qresource>
 </RCC>

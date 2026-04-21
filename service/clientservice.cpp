@@ -6,6 +6,7 @@ ClientService::ClientService() {
     m_loanRecommender = new LoanRecommender();
     m_chatBot = new ChatBot();
     m_faceIdService = new FaceIdService();
+    m_routePlanner = new RoutePlanner();
     connect(m_loanRecommender, &LoanRecommender::finalLoanAmountReady,
             this, &ClientService::handleFinalLoanAmount);
 
@@ -29,6 +30,11 @@ ClientService::ClientService() {
 
     connect(m_loanRecommender, &LoanRecommender::recommendationReady,
             this, &ClientService::handleRecommendation);
+
+    connect(m_routePlanner, &RoutePlanner::networkError,
+            this, &ClientService::handleNetworkFailure);
+
+    connect(m_routePlanner, &RoutePlanner::routeReady, this, &ClientService::handleRoute);
 }
 void ClientService::getAll(QTextBrowser* browser, QTableWidget *table)const{
     std::vector<std::shared_ptr<Entity>> res = m_client_repo->getAll();
@@ -848,5 +854,28 @@ void ClientService::handleUserFaceVector(const QString& vectorJson){
             qDebug() << "ClientService: logged in successfully!";
             emit faceLoginSuccessful();
         }
+    }
+}
+
+std::vector<Route> ClientService::getRoutes(const int driver_id) const{
+    std::vector<Route> res;
+    try{
+        res = m_client_repo->getRoutes(driver_id);
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+    }
+    return res;
+}
+void ClientService::planRoute(const QString& origin, const QString& destination, const int driver_id) const{
+    if(driver_id <= 0)
+        throw std::invalid_argument(std::format("The driver id = {} is invalid!", driver_id));
+    m_routePlanner->requestRoute(origin, destination, driver_id);
+}
+void ClientService::handleRoute(const Route& r){
+    qDebug() << "handleRoute";
+    try{
+        m_client_repo->updateRouteDriver(r); // add the driver_id (Python hasn't added it to the db)
+    }catch(const std::exception& e){
+        qDebug() << e.what();
     }
 }

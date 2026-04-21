@@ -1,4 +1,4 @@
-QT       += core  sql pdf charts multimedia multimediawidgets
+QT       += core  sql pdf charts multimedia multimediawidgets webenginewidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++20
@@ -21,6 +21,7 @@ SOURCES += \
     AI/frauddetector.cpp \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
+    AI/routeplanner.cpp \
     CV/facecapturedialog.cpp \
     CV/facedetector.cpp \
     auth/faceidservice.cpp \
@@ -30,6 +31,7 @@ SOURCES += \
     db/transactionrepository.cpp \
     entities/account.cpp \
     entities/loan.cpp \
+    entities/route.cpp \
     entities/transaction.cpp \
     service/abstractservice.cpp \
     service/accountservice.cpp \
@@ -49,6 +51,7 @@ HEADERS += \
     AI/frauddetector.h \
     AI/loanrecommender.h \
     AI/networkmanager.h \
+    AI/routeplanner.h \
     CV/facecapturedialog.h \
     CV/facedetector.h \
     auth/faceidservice.h \
@@ -58,6 +61,7 @@ HEADERS += \
     db/transactionrepository.h \
     entities/account.h \
     entities/loan.h \
+    entities/route.h \
     entities/transaction.h \
     service/abstractservice.h \
     service/accountservice.h \

@@ -575,16 +575,23 @@ void MainWindow::on_actionShow_route_triggered(){
     mapView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     layout->addWidget(mapView);
 
-    // Pass the layout to your custom dialog builder
-    createDialogBox("Map", dlg, layout);
-
-    // Connect to the loadFinished signal BEFORE setting the URL
-    connect(mapView, &QWebEngineView::loadFinished, this, [this, mapView](bool ok) {
-        if (ok) {
-            // Only run the JS after the HTML page is fully loaded
-            auto routes = m_client_service->getRoutes(m_session->getUserId());
-            qDebug() << "Routes size: " << routes.size();
-            for(const Route& r : routes){
+    QFormLayout *formLayout = new QFormLayout(); // to add rows
+    formLayout->addRow(layout);
+    createDialogBox("Map", dlg, formLayout);
+    QLabel *statusLabel = new QLabel();
+    formLayout->addRow(statusLabel);
+    const auto routes = m_client_service->getRoutes(m_session->getUserId());
+    QStringList ids;
+    for(const auto& r : routes)
+        ids.push_back(QString::number(r.getId()));
+    qDebug() << "Routes size: " << routes.size();
+    QList<ComboData> comboData = {{"My Routes", ids}};
+    QList<QComboBox*> comboBoxes = createComboBoxes(formLayout, comboData);
+    auto displayRoute = [&mapView, &routes, &statusLabel](const int route_id){
+        qDebug() << "displayRoute: route_id = " << route_id;
+        qDebug() << "displayRoute: Routes size: " << routes.size();
+        for(const auto& r : routes){
+            if(r.getId() == route_id){
                 QString rawJson = r.getGeoJsonString();
                 qDebug() << "Raw JSON:" << rawJson;
                 // 1. Encode the JSON payload into Base64 (Safe for web transport)
@@ -592,13 +599,25 @@ void MainWindow::on_actionShow_route_triggered(){
                 // 2. Tell JavaScript to decode it using its native 'atob()' function
                 QString jsCommand = QString("drawRoute(atob('%1'));").arg(b64Json);
                 mapView->page()->runJavaScript(jsCommand);
+
+                statusLabel->setText(r.getStatus());
             }
+        }
+    };
+    // Connect to the loadFinished signal BEFORE setting the URL
+    connect(mapView, &QWebEngineView::loadFinished, this, [comboBoxes, displayRoute](bool ok) {
+        if (ok) {
+            // Only run the JS after the HTML page is fully loaded
+            displayRoute(comboBoxes[0]->currentText().toInt());
         } else {
             qDebug() << "Failed to load map.html";
         }
     });
     // load the URL
     mapView->setUrl(QUrl("qrc:/map.html"));
+    connect(comboBoxes[0], &QComboBox::currentTextChanged, this, [displayRoute](const QString& text){
+        displayRoute(text.toInt());
+    });
     if (dlg.exec() == QDialog::Accepted) {
     }
 }

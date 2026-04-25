@@ -16,13 +16,14 @@ private:
     std::unique_ptr<LoanRecommender> m_loanRecommender = nullptr;
     // fraud detection
     bool isTransactionSuspicious(const Transaction& transaction);
-    void makeTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description);
+    void makeTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description, const QString& location);
     // Define a struct to save the context
     struct PendingTx {
         int fromAccount;
         int toAccount;
         double amount;
         QString description;
+        QString location;
     };
     // The storage variable
     std::optional<PendingTx> m_pendingTx;
@@ -31,12 +32,12 @@ public:
     ~TransactionService() = default;
     void getAll(QTextBrowser* browser, QTableWidget *table = nullptr) const override;
     int insertTransaction(const QDate& date, const double amount,
-                           const int id_account, const int id_accountTo, const QString& description);
+                           const int id_account, const int id_accountTo, const QString& description, const QString& location);
     void updateTransaction(const int id, const QDate& date, const double amount,
-                           const int id_account, const int id_accountTo, const QString& description);
+                           const int id_account, const int id_accountTo, const QString& description, const QString& location);
     void deleteObj(const int id) override;
     void getTransactionView(QTextBrowser* browser) const;
-    void requestTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description);
+    void requestTransaction(const int id_account, const int id_accountTo, const double amount, const QString& description, const QString& location);
     // charts
     void buildTransactionsChart(const int w, const int h) const;
     void buildSpendingPieChart(const int w, const int h) const;

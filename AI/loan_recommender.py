@@ -19,6 +19,7 @@ import logging
 import psycopg2
 import psycopg2.extras
 import requests
+from shapely.geometry import Point, LineString
 
 # Get a free API key from openrouteservice.org
 ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjFlZDcxY2NlNzc4MjQ3Y2M4YzZlMDAzZTY5NWE4YzQ1IiwiaCI6Im11cm11cjY0In0="
@@ -41,6 +42,16 @@ def geocode_address(address_text):
 
     return None # Return None if the address wasn't found
 
+def is_transaction_on_route(route_coordinates, merchant_lat, merchant_lng):
+    # 1. Create a LineString from the OpenRouteService coordinates
+    route_line = LineString(route_coordinates)
+    # 2. Create a "buffer" around the line.
+    # (0.05 degrees is roughly 5 kilometers, allowing for off-highway exits)
+    route_corridor = route_line.buffer(0.05)
+    # 3. Create a point for the Gas Station
+    merchant_location = Point(merchant_lng, merchant_lat)
+    # 4. The Magic Check: Is the gas station inside the corridor?
+    return route_corridor.contains(merchant_location)
 
 # Force stdout/stderr to use UTF-8 to prevent emoji crashes on Windows consoles
 if sys.stdout.encoding != 'utf-8':
@@ -406,6 +417,12 @@ def check_fraud():
         data = request.get_json()
         new_amount = data.get('amount')
         history = data.get('history') # List of float amounts
+
+        #TODO: pass route_coordinates, current_address
+        #coordinates = geocode_address(current_address)
+        # is_route = is_transaction_on_route(route_coordinates, coordinates.Latitude, coordinates.Longtitude)
+        # if is_route is False:
+        #     return jsonify({'status': 'SUSPICIOUS', 'reason': 'The transaction is too far from the route!'})
 
         print(f"Debug: Amount={new_amount}, HistoryLen={len(history) if history else 0}", flush=True)
 

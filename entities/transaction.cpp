@@ -1,7 +1,7 @@
 #include "transaction.h"
 #include "db/transactionrepository.h"
 
-Transaction::Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo, const QString& description):
+Transaction::Transaction(const int id, const QDate& date, const double amount, const int id_account, const int id_accountTo, const QString& description, const QString& location):
     Entity(id)
 {
     setDate(date);
@@ -9,6 +9,7 @@ Transaction::Transaction(const int id, const QDate& date, const double amount, c
     setIdAccount(id_account);
     setIdAccountTo(id_accountTo);
     setDescription(description);
+    setLocation(location);
 }
 
 double Transaction::getAmount() const{
@@ -26,7 +27,9 @@ int Transaction::getIdAccountTo() const{
 QString Transaction::getDescription() const{
     return m_description;
 }
-
+QString Transaction::getLocation() const{
+    return m_location;
+}
 void Transaction::setAmount(const double amount){
     if(amount < 0){
         throw std::invalid_argument("The amount of money on the account is invalid!");
@@ -64,7 +67,12 @@ void Transaction::setDescription(const QString& description){
     }
     m_description = description;
 }
-
+void Transaction::setLocation(const QString& location){
+    if(location.isEmpty()){
+        throw std::invalid_argument("The location is empty!");
+    }
+    m_location = location;
+}
 void operator<<(QTextBrowser* browser, const Transaction& t){
     std::pair<QString, QString> categorized;
     try{
@@ -79,6 +87,7 @@ void operator<<(QTextBrowser* browser, const Transaction& t){
     res += QString::number(t.getIdAccount()) + "   ";
     res += QString::number(t.getIdAccountTo()) + "   ";
     res += t.getDescription() + "   ";
+    res += t.getLocation() + "   ";
     res += categorized.first + "   ";
     res += categorized.second + '\n';
     browser->append(res);

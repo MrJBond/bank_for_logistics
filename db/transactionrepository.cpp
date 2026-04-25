@@ -12,14 +12,16 @@ std::vector<std::shared_ptr<Entity>> TransactionRepository::getAll() const {
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     while(query.next()){
-        int id = query.value(0).toInt();
-        QDate date = query.value(1).toDate();
-        double amount = query.value(2).toDouble();
-        int id_account = query.value(3).toInt();
-        int id_accountTo = query.value(4).toInt();
-        QString description = query.value(5).toString();
+        const int id = query.value(0).toInt();
+        const QDate date = query.value(1).toDate();
+        const double amount = query.value(2).toDouble();
+        const int id_account = query.value(3).toInt();
+        const int id_accountTo = query.value(4).toInt();
+        const QString description = query.value(5).toString();
+        // skip the category and the icon
+        const QString location = query.value(8).toString();
         try{
-            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description);
+            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description, location);
             res.push_back(transact);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -36,14 +38,16 @@ std::shared_ptr<Entity> TransactionRepository::getById(const int id) const{
         throw std::runtime_error(query.lastError().text().toStdString());
     }
     if(query.next()){
-        int id = query.value(0).toInt();
-        QDate date = query.value(1).toDate();
-        double amount = query.value(2).toDouble();
-        int id_account = query.value(3).toInt();
-        int id_accountTo = query.value(4).toInt();
-        QString description = query.value(5).toString();
+        const int id = query.value(0).toInt();
+        const QDate date = query.value(1).toDate();
+        const double amount = query.value(2).toDouble();
+        const int id_account = query.value(3).toInt();
+        const int id_accountTo = query.value(4).toInt();
+        const QString description = query.value(5).toString();
+        // skip the category and the icon
+        const QString location = query.value(8).toString();
         try{
-            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description);
+            auto transact = std::make_shared<Transaction>(id, date, amount, id_account, id_accountTo, description, location);
             return transact;
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -64,13 +68,14 @@ void TransactionRepository::insert(std::shared_ptr<Entity> entity) {
         }
         QSqlQuery query;
         query.prepare(QString("INSERT INTO public.\"Transaction\" ") +
-                      "(date_transaction, amount, id_account, \"id_accountTo\", description)" +
-                      "VALUES(:date_transaction, :amount, :id_account, :id_accountTo, :desc);");
+                      "(date_transaction, amount, id_account, \"id_accountTo\", description, location)" +
+                      "VALUES(:date_transaction, :amount, :id_account, :id_accountTo, :desc, :location);");
         query.bindValue(":date_transaction", tran->getDate());
         query.bindValue(":amount", tran->getAmount());
         query.bindValue(":id_account", tran->getIdAccount());
         query.bindValue(":id_accountTo", tran->getIdAccountTo());
         query.bindValue(":desc", tran->getDescription());
+        query.bindValue(":location", tran->getLocation());
         if(!query.exec()){
             throw std::runtime_error(query.lastError().text().toStdString());
         }
@@ -93,7 +98,8 @@ void TransactionRepository::update(std::shared_ptr<Entity> entity){
                       "amount = :amount, "
                       "id_account = :id_account, "
                       "\"id_accountTo\" = :id_accountTo, "
-                      "description = :description "
+                      "description = :description, "
+                      "location = :location "
                       "WHERE id_transaction = :id"
                       );
         query.bindValue(":date_transaction", tran->getDate());
@@ -101,6 +107,7 @@ void TransactionRepository::update(std::shared_ptr<Entity> entity){
         query.bindValue(":id_account", tran->getIdAccount());
         query.bindValue(":id_accountTo", tran->getIdAccountTo());
         query.bindValue(":description", tran->getDescription());
+        query.bindValue(":location", tran->getLocation());
         query.bindValue(":id", tran->getId());
         if(!query.exec()){
             throw std::runtime_error(query.lastError().text().toStdString());
@@ -123,7 +130,9 @@ std::vector<Transaction> TransactionRepository::transactionView() const{
                                         query.value(2).toDouble(),
                                         query.value(3).toInt(),
                                         query.value(4).toInt(),
-                                        query.value(5).toString());
+                                        query.value(5).toString(),
+                                        // skip the category and the icon
+                                        query.value(8).toString());
             res.push_back(t);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();
@@ -149,7 +158,9 @@ std::vector<Transaction> TransactionRepository::getTransactionsForAccount(const 
                                         query.value(2).toDouble(),
                                         query.value(3).toInt(),
                                         query.value(4).toInt(),
-                                        query.value(5).toString());
+                                        query.value(5).toString(),
+                                        // skip the category and the icon
+                                        query.value(8).toString());
             res.push_back(t);
         }catch(const std::invalid_argument& e){
             qDebug() << e.what();

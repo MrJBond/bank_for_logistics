@@ -879,3 +879,11 @@ void ClientService::handleRoute(const Route& r){
         qDebug() << e.what();
     }
 }
+void ClientService::updateRouteStatus(const int id, const QString& status){
+    try{
+        m_client_repo->updateRouteStatus(id, status);
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+        throw std::exception(e); // notify the ui
+    }
+}

@@ -438,3 +438,11 @@ void ClientRepository::updateRouteDriver(const Route& r){
     if(!query.exec())
         throw std::runtime_error(query.lastError().text().toStdString());
 }
+void ClientRepository::updateRouteStatus(const int id, const QString& status){
+    QSqlQuery query;
+    query.prepare("UPDATE public.\"logistics_routes\" SET status = :status WHERE id = :id;");
+    query.bindValue(":status", status);
+    query.bindValue(":id", id);
+    if(!query.exec())
+        throw std::runtime_error(query.lastError().text().toStdString());
+}

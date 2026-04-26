@@ -97,6 +97,7 @@ public:
     std::vector<Account> getAccountsForClient(const int id_client) const;
     std::vector<Route> getRoutes(const int driver_id) const;
     void planRoute(const QString& origin, const QString& destination, const int driver_id) const;
+    void updateRouteStatus(const int id, const QString& status);
     /*****************************************************
                             CHARTS
      *****************************************************/

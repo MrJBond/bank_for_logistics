@@ -126,6 +126,7 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionPredict_my_spending"/>
     <addaction name="actionShow_route"/>
     <addaction name="actionPlan_route"/>
+    <addaction name="actionChange_route_status"/>
    </widget>
    <widget class="QMenu" name="menuInsert">
     <property name="font">
@@ -523,6 +524,11 @@ amount of account balances</string>
   <action name="actionPlan_route">
    <property name="text">
     <string>Plan route</string>
+   </property>
+  </action>
+  <action name="actionChange_route_status">
+   <property name="text">
+    <string>Change route status</string>
    </property>
   </action>
  </widget>

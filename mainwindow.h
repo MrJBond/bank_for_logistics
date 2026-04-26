@@ -70,6 +70,7 @@ private slots:
     void on_actionPredict_my_spending_triggered();
     void on_actionShow_route_triggered();
     void on_actionPlan_route_triggered();
+    void on_actionChange_route_status_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();

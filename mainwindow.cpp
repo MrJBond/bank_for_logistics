@@ -621,6 +621,21 @@ void MainWindow::on_actionShow_route_triggered(){
     if (dlg.exec() == QDialog::Accepted) {
     }
 }
+void MainWindow::on_actionChange_route_status_triggered(){
+    const auto routes = m_client_service->getRoutes(m_session->getUserId());
+    QStringList ids;
+    for(const auto& r : routes)
+        ids.push_back(QString::number(r.getId()));
+    qDebug() << "Routes size: " << routes.size();
+    QStringList statuses = {"COMPLETED", "IN_TRANSIT", "PLANNED"};
+    QList<ComboData> comboData = {{"My Routes", ids}, {"STATUS", statuses}};
+    auto res = createDialogInsert("Change route status", {}, nullptr, &comboData);
+    try{
+        m_client_service->updateRouteStatus(res["My Routes"].toInt(), res["STATUS"]);
+    }catch(const std::exception& e){
+        createMessageBox(e.what());
+    }
+}
 /***********************************************
                     REPORTS
  *************************************************/

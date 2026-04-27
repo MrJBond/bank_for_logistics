@@ -2,6 +2,7 @@
 #define FRAUDDETECTOR_H
 
 #include "AI/networkmanager.h"
+#include "entities/route.h"
 #include "entities/transaction.h"
 
 class FraudDetector : public NetworkManager
@@ -10,7 +11,7 @@ class FraudDetector : public NetworkManager
 public:
     FraudDetector();
     ~FraudDetector();
-    void requestTransactionCheck(const Transaction& t, const QJsonArray& history);
+    void requestTransactionCheck(const Transaction& t, const QJsonArray& history, const std::optional<Route>& ongoingRoute = std::nullopt);
     void requestTransactionCategorization(const Transaction& t);
     void requestTransactionCategorization(const std::vector<Transaction>& trans);
 signals:

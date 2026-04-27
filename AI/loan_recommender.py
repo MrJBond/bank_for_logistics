@@ -42,12 +42,18 @@ def geocode_address(address_text):
 
     return None # Return None if the address wasn't found
 
-def is_transaction_on_route(route_coordinates, merchant_lat, merchant_lng):
+def is_transaction_on_route(route_geojson, merchant_lat, merchant_lng):
+    # Extract the raw list of points from the GeoJSON dictionary
+    if 'coordinates' not in route_geojson:
+        print("Error: Missing 'coordinates' in route data", flush=True)
+        return False
+
+    coords_list = route_geojson['coordinates']
     # 1. Create a LineString from the OpenRouteService coordinates
-    route_line = LineString(route_coordinates)
+    route_line = LineString(coords_list)
     # 2. Create a "buffer" around the line.
     # (0.05 degrees is roughly 5 kilometers, allowing for off-highway exits)
-    route_corridor = route_line.buffer(0.05)
+    route_corridor = route_line.buffer(0.15)
     # 3. Create a point for the Gas Station
     merchant_location = Point(merchant_lng, merchant_lat)
     # 4. The Magic Check: Is the gas station inside the corridor?
@@ -417,12 +423,31 @@ def check_fraud():
         data = request.get_json()
         new_amount = data.get('amount')
         history = data.get('history') # List of float amounts
+        route_coordinates = data.get('route')
+        current_address = data.get('location')
+        # 1. Geocode the address
+        coordinates = geocode_address(current_address)
+        if not coordinates:
+            return jsonify({'error': 'Could not geocode merchant location'}), 400
 
-        #TODO: pass route_coordinates, current_address
-        #coordinates = geocode_address(current_address)
-        # is_route = is_transaction_on_route(route_coordinates, coordinates.Latitude, coordinates.Longtitude)
-        # if is_route is False:
-        #     return jsonify({'status': 'SUSPICIOUS', 'reason': 'The transaction is too far from the route!'})
+        # Note: OpenRouteService returns [Longitude, Latitude]
+        lng = coordinates[0]
+        lat = coordinates[1]
+
+        # 2. Safely check if a route was provided
+        if route_coordinates is not None:
+            # Parse the string back into a Python dict if it came as a string from C++
+            if isinstance(route_coordinates, str):
+                import json
+                route_coordinates = json.loads(route_coordinates)
+
+            # Check the coordinates (Make sure Shapely function extracts the coords properly)
+            is_route = is_transaction_on_route(route_coordinates, lat, lng)
+            if is_route is False:
+                return jsonify({
+                    'status': 'SUSPICIOUS',
+                    'reason': 'The transaction is too far from the active route!'
+                    })
 
         print(f"Debug: Amount={new_amount}, HistoryLen={len(history) if history else 0}", flush=True)
 

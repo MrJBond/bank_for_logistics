@@ -38,6 +38,7 @@ public:
     static bool isAccountMine(const int id_client, const int id_account);
     double getTotalCurrentBalance(const int id_client) const; // $
     std::vector<Route> getRoutes(const int driver_id) const;
+    std::optional<Route> getOngoingRoute(const int driver_id) const;
     void updateRouteDriver(const Route& r);
     void updateRouteStatus(const int id, const QString& status);
     /****************************************************

@@ -3,12 +3,15 @@
 FraudDetector::FraudDetector() {}
 FraudDetector::~FraudDetector(){}
 
-void FraudDetector::requestTransactionCheck(const Transaction& t, const QJsonArray& history){
+void FraudDetector::requestTransactionCheck(const Transaction& t, const QJsonArray& history, const std::optional<Route>& ongoingRoute){
     const double amount = t.getAmount();
     // 1. Prepare JSON Payload
     QJsonObject json;
     json["amount"] = amount;
     json["history"] = history;
+    json["location"] = t.getLocation();
+    if(ongoingRoute.has_value())
+        json["route"] = ongoingRoute->getGeoJsonString();
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
 

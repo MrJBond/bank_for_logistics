@@ -3,6 +3,7 @@
 
 TransactionService::TransactionService() {
     m_transaction_repo = std::make_shared<TransactionRepository>(TransactionRepository());
+    m_client_repo = std::make_unique<ClientRepository>(ClientRepository());
     m_fraudDetector = std::make_shared<FraudDetector>();
     m_loanRecommender = std::make_unique<LoanRecommender>();
     connect(m_fraudDetector.get(), &FraudDetector::networkError,
@@ -315,7 +316,14 @@ bool TransactionService::isTransactionSuspicious(const Transaction& transaction)
             historyArray.append(Entity::toDollar(t.getAmount(), acc->getCurrency()));
     }
     qDebug() << "History: " << historyArray;
-    m_fraudDetector->requestTransactionCheck(transaction, historyArray);
+    std::optional<Route> route;
+    try{
+        route = m_client_repo->getOngoingRoute(m_session->getUserId());
+    }catch(const std::exception& e){
+        qDebug() << e.what();
+    }
+    qDebug() << "TransactionService::isTransactionSuspicious: route: " << route.has_value();
+    m_fraudDetector->requestTransactionCheck(transaction, historyArray, route);
     return true;
 }
 void TransactionService::handleNetworkFailure(const QString& errorString){

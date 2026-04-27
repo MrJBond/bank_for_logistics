@@ -12,6 +12,7 @@ class TransactionService : public AbstractService
 {
 private:
     std::shared_ptr<TransactionRepository> m_transaction_repo = nullptr;
+    std::unique_ptr<ClientRepository> m_client_repo = nullptr;
     std::shared_ptr<FraudDetector> m_fraudDetector = nullptr;
     std::unique_ptr<LoanRecommender> m_loanRecommender = nullptr;
     // fraud detection

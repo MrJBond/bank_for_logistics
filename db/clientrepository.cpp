@@ -446,3 +446,29 @@ void ClientRepository::updateRouteStatus(const int id, const QString& status){
     if(!query.exec())
         throw std::runtime_error(query.lastError().text().toStdString());
 }
+std::optional<Route> ClientRepository::getOngoingRoute(const int driver_id) const{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM public.\"logistics_routes\" WHERE driver_id = :driver_id AND status = 'IN_TRANSIT'");
+    query.bindValue(":driver_id", driver_id);
+    if(!query.exec())
+        throw std::runtime_error(query.lastError().text().toStdString());
+    if(query.next()){
+        const int id = query.value(0).toInt();
+        const int driver = query.value(1).toInt();
+        const QString origin_address = query.value(2).toString();
+        const QString destination_address = query.value(3).toString();
+        const double distance_km = query.value(4).toDouble();
+        const double estimated_hours = query.value(5).toDouble();
+        const QString geoJsonString = query.value(6).toString();
+        const QString status = query.value(7).toString();
+        try{
+            const Route route = Route(id, driver, origin_address,
+                                      destination_address, distance_km,
+                                      estimated_hours, geoJsonString, status);
+            return route;
+        }catch(const std::exception& e){
+            qDebug() << "The route id = " << id << " is invalid: " << e.what();
+        }
+    }
+    return std::nullopt;
+}

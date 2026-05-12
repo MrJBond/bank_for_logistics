@@ -52,9 +52,9 @@ MainWindow::MainWindow(QWidget *parent)
     }
     this->setWindowIcon(QIcon(QPixmap(":/img/img/dollar.png")));
     this->setWindowTitle("Bank");
-    ui->console->setTextColor(QColor(255,0,0));
+    ui->console->setTextColor(QColor(255,255,255));
 
-    QString style = "background-color: white; color: red;";
+    QString style = "background-color: grey; color: white;";
     ui->menubar->setStyleSheet(style);
     qDebug() << " User session: " << m_session->getUserId()
              << " " << m_session->getUsername() << " "

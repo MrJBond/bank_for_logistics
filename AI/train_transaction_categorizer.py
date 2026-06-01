@@ -5,7 +5,7 @@ This creates the transaction_model.joblib file, which is the AI's "brain."
 
 import psycopg2
 import joblib
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 
@@ -28,11 +28,11 @@ def retrain_categorizer():
 
     print("Training model...")
     # Create a Pipeline:
-    # 1. Vectorizer: Converts text to frequency matrix
+    # 1. Vectorizer: Converts text to a TF-IDF frequency matrix
     # 2. Classifier: Naive Bayes
     # analyzer='char_wb': Look at characters inside word boundaries
-    # ngram_range=(3, 5): Look at patterns of 3 to 5 letters (e.g., "Net", "etfl", "lix")
-    category_model = make_pipeline(CountVectorizer(analyzer='char_wb', ngram_range=(3, 5)), MultinomialNB())
+    # ngram_range=(2, 4): Look at patterns of 2 to 4 letters (e.g., "Ne", "etfl", "lix")
+    category_model = make_pipeline(TfidfVectorizer(analyzer='char_wb', ngram_range=(2, 4)), MultinomialNB(alpha=0.1))
     category_model.fit(X_train_text, y_train_labels)
 
     print("Saving model to disk...")

@@ -314,7 +314,7 @@ def handle_chat():
         # C++ app will immediately take over and show the first question.
         response = {
             'intent': 'assess_risk',
-            'reply': 'Sure, let me help you determine your investment risk profile.'
+            'reply': 'Sure, let me help you evaluate your creditworthiness for a fuel loan.'
         }
     elif predicted_intent == 'gratitude':
         response = {

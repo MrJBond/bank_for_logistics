@@ -251,3 +251,100 @@ void Tester::onTransactionsReady(const std::vector<TestTransaction>& trans) {
         qDebug() << "⚠️ SOME TESTS FAILED. CHECK THE LOGS.";
     }
 }
+
+void Tester::testChatbotIntents() {
+    qDebug() << "\n--- Starting ChatBot Intent Classification Test ---";
+
+    // 1. creating a dataset for testing the chatbot
+    std::vector<ChatTestCase> chatTests = {
+        // GREETING
+        {"Hello there!", "greeting"},
+        {"Hi, I need help", "greeting"},
+
+        // CHECK_BALANCE
+        {"How much money do I have?", "check_balance"},
+        {"Show my current balance", "check_balance"},
+        {"What is my account balance?", "check_balance"},
+
+        // REQUEST_LOAN
+        {"I want to take a loan", "request_loan_recommendation"},
+        {"Can I get some credit for fuel?", "request_loan_recommendation"},
+
+        // LIST_TRANSACTIONS
+        {"Show my recent transactions", "list_transactions"},
+        {"What did I spend money on yesterday?", "list_transactions"},
+
+        // ASSESS_RISK
+        {"Help me calculate my risk profile", "assess_risk"},
+        {"Evaluate my creditworthiness", "assess_risk"},
+
+        // GRATITUDE
+        {"Thank you so much", "gratitude"},
+        {"Thanks for the help", "gratitude"},
+
+        // UNKNOWN
+        {"Tell me a joke about bananas", "unknown"},
+        {"dsfsdf sdfsdf", "unknown"}
+    };
+
+    m_chatTestsTotal = chatTests.size();
+    m_chatTestsCompleted = 0;
+    m_chatTestsPassed = 0;
+
+    // 2. sending all requests in parallel
+    for (size_t i = 0; i < chatTests.size(); ++i) {
+        const auto& testCase = chatTests[i];
+
+        QJsonObject json;
+        json["message"] = testCase.message;
+        QJsonDocument doc(json);
+        QByteArray data = doc.toJson();
+
+        QNetworkRequest request(QUrl("http://127.0.0.1:5000/chat"));
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+        QNetworkReply *reply = m_manager->post(request, data);
+
+        // 3. The lambda function captures [testCase] ​​by value
+        // This means that each answer will "remember" its test question
+        connect(reply, &QNetworkReply::finished, this, [this, reply, testCase]() {
+            m_chatTestsCompleted++;
+
+            if (reply->error() == QNetworkReply::NoError) {
+                QByteArray response_data = reply->readAll();
+                QJsonDocument json_response = QJsonDocument::fromJson(response_data);
+                QJsonObject obj = json_response.object();
+
+                QString predictedIntent = obj["intent"].toString();
+
+                if (predictedIntent == testCase.expectedIntent) {
+                    m_chatTestsPassed++;
+                    // qDebug() << "✅ PASSED:" << testCase.message << "-> [" << predictedIntent << "]";
+                } else {
+                    qDebug() << "❌ FAILED on message:" << testCase.message;
+                    qDebug() << "   Expected :" << testCase.expectedIntent;
+                    qDebug() << "   Got      :" << predictedIntent;
+                    qDebug() << "   Bot Reply:" << obj["reply"].toString();
+                }
+            } else {
+                qDebug() << "❌ NETWORK ERROR on message:" << testCase.message << reply->errorString();
+            }
+
+            reply->deleteLater();
+
+            // 4. Checking if this was the last answer
+            if (m_chatTestsCompleted == m_chatTestsTotal) {
+                qDebug() << "\n--- ChatBot Test Summary ---";
+                qDebug() << m_chatTestsPassed << "out of" << m_chatTestsTotal << "intents matched exactly.";
+
+                // Accuracy calculation
+                double accuracy = (double)m_chatTestsPassed / m_chatTestsTotal * 100.0;
+                qDebug() << "Bot Accuracy:" << QString::number(accuracy, 'f', 1) << "%";
+
+                if (m_chatTestsPassed == m_chatTestsTotal) {
+                    qDebug() << "🎉 ALL CHATBOT TESTS PASSED!";
+                }
+            }
+        });
+    }
+}

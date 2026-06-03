@@ -129,6 +129,7 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionChange_route_status"/>
     <addaction name="separator"/>
     <addaction name="actionTest_transaction_categorizer"/>
+    <addaction name="actionTest_Chat_bot_intents"/>
    </widget>
    <widget class="QMenu" name="menuInsert">
     <property name="font">
@@ -536,6 +537,11 @@ amount of account balances</string>
   <action name="actionTest_transaction_categorizer">
    <property name="text">
     <string>Test transaction categorizer</string>
+   </property>
+  </action>
+  <action name="actionTest_Chat_bot_intents">
+   <property name="text">
+    <string>Test Chat bot intents</string>
    </property>
   </action>
  </widget>

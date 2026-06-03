@@ -641,6 +641,9 @@ void MainWindow::on_actionChange_route_status_triggered(){
 void MainWindow::on_actionTest_transaction_categorizer_triggered(){
     m_tester->testTransactionCategorization();
 }
+void MainWindow::on_actionTest_Chat_bot_intents_triggered(){
+    m_tester->testChatbotIntents();
+}
 /***********************************************
                     REPORTS
  *************************************************/

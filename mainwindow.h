@@ -73,6 +73,7 @@ private slots:
     void on_actionPlan_route_triggered();
     void on_actionChange_route_status_triggered();
     void on_actionTest_transaction_categorizer_triggered();
+    void on_actionTest_Chat_bot_intents_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();

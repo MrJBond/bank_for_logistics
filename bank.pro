@@ -22,6 +22,7 @@ SOURCES += \
     AI/loanrecommender.cpp \
     AI/networkmanager.cpp \
     AI/routeplanner.cpp \
+    AI/tester.cpp \
     CV/facecapturedialog.cpp \
     CV/facedetector.cpp \
     auth/faceidservice.cpp \
@@ -52,6 +53,7 @@ HEADERS += \
     AI/loanrecommender.h \
     AI/networkmanager.h \
     AI/routeplanner.h \
+    AI/tester.h \
     CV/facecapturedialog.h \
     CV/facedetector.h \
     auth/faceidservice.h \

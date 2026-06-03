@@ -24,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
         m_pythonServerProcess = new QProcess(this);
         startPythonServer();
 
+        m_tester = std::make_unique<Tester>();
+
         connect(m_client_service.get(), &ClientService::faceLoginSuccessful,
                 this, [this](){login([](){});}); // to close the log in dialog
 
@@ -635,6 +637,9 @@ void MainWindow::on_actionChange_route_status_triggered(){
     }catch(const std::exception& e){
         createMessageBox(e.what());
     }
+}
+void MainWindow::on_actionTest_transaction_categorizer_triggered(){
+    m_tester->testTransactionCategorization();
 }
 /***********************************************
                     REPORTS

@@ -127,6 +127,8 @@ color: rgb(255, 255, 255);</string>
     <addaction name="actionShow_route"/>
     <addaction name="actionPlan_route"/>
     <addaction name="actionChange_route_status"/>
+    <addaction name="separator"/>
+    <addaction name="actionTest_transaction_categorizer"/>
    </widget>
    <widget class="QMenu" name="menuInsert">
     <property name="font">
@@ -529,6 +531,11 @@ amount of account balances</string>
   <action name="actionChange_route_status">
    <property name="text">
     <string>Change route status</string>
+   </property>
+  </action>
+  <action name="actionTest_transaction_categorizer">
+   <property name="text">
+    <string>Test transaction categorizer</string>
    </property>
   </action>
  </widget>

@@ -25,6 +25,7 @@
 #include <QProcess>
 #include <QWebEngineView>
 #include <QWebEnginePage>
+#include "AI/tester.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -71,6 +72,7 @@ private slots:
     void on_actionShow_route_triggered();
     void on_actionPlan_route_triggered();
     void on_actionChange_route_status_triggered();
+    void on_actionTest_transaction_categorizer_triggered();
     // reports
     void on_actionLoanReport_triggered();
     void on_actionClientsWithTotalSumReport_triggered();
@@ -130,6 +132,7 @@ private:
     QRadioButton *m_dbUserRadioButton = nullptr;
     QLabel *m_usernameLabel = nullptr;
     QLabel *m_userpasswordLabel = nullptr;
+    std::unique_ptr<Tester> m_tester = nullptr;
 
     void login(std::function<void()> loginUser);
     void createUserSession(const int id, const QString& name);

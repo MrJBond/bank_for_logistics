@@ -260,31 +260,62 @@ void Tester::testChatbotIntents() {
         // GREETING
         {"Hello there!", "greeting"},
         {"Hi, I need help", "greeting"},
+        {"Good morning, bot", "greeting"},
+        {"Hey, are you online?", "greeting"},
+        {"Hullooo", "greeting"}, // slang
+        {"Sup", "greeting"},     // slang
 
         // CHECK_BALANCE
         {"How much money do I have?", "check_balance"},
         {"Show my current balance", "check_balance"},
         {"What is my account balance?", "check_balance"},
+        {"Do I have enough funds for fuel?", "check_balance"},
+        {"Check card limit", "check_balance"},
+        {"balanc plz", "check_balance"}, // typo
+        {"Tell me how much cash is left", "check_balance"},
 
         // REQUEST_LOAN
         {"I want to take a loan", "request_loan_recommendation"},
         {"Can I get some credit for fuel?", "request_loan_recommendation"},
+        {"Need a cash advance for truck repairs", "request_loan_recommendation"}, // long
+        {"I am out of money, lend me 500", "request_loan_recommendation"},
+        {"Apply for microloan", "request_loan_recommendation"},
+        {"Short on cash for tolls, need credit", "request_loan_recommendation"},
+        {"borrow money", "request_loan_recommendation"},
 
         // LIST_TRANSACTIONS
         {"Show my recent transactions", "list_transactions"},
         {"What did I spend money on yesterday?", "list_transactions"},
+        {"Show my fuel expenses for this week", "list_transactions"},
+        {"List my last 5 purchases", "list_transactions"},
+        {"Where did my money go?", "list_transactions"},
+        {"Payment history", "list_transactions"},
+        {"transacton list", "list_transactions"}, // typo
 
         // ASSESS_RISK
         {"Help me calculate my risk profile", "assess_risk"},
         {"Evaluate my creditworthiness", "assess_risk"},
+        {"Am I eligible for a fuel loan?", "assess_risk"},
+        {"What is my credit score?", "assess_risk"},
+        {"Calculate risk limit", "assess_risk"},
+        {"Run background check for credit", "assess_risk"},
 
         // GRATITUDE
         {"Thank you so much", "gratitude"},
         {"Thanks for the help", "gratitude"},
+        {"You are the best, thanks", "gratitude"},
+        {"Appreciate it!", "gratitude"},
+        {"Thx bye", "gratitude"}, // slang
 
         // UNKNOWN
         {"Tell me a joke about bananas", "unknown"},
-        {"dsfsdf sdfsdf", "unknown"}
+        {"dsfsdf sdfsdf", "unknown"}, // noise
+        {"What is the weather in New York?", "unknown"},
+        {"Call my manager right now", "unknown"}, // Function not supported
+        {"How to fix a broken truck engine?", "unknown"}, // Logistics, not finance
+        {"Order a pizza to the parking lot", "unknown"},
+        {"Turn on the radio", "unknown"},
+        {"1234567890", "unknown"}
     };
 
     m_chatTestsTotal = chatTests.size();

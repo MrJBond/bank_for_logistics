@@ -62,29 +62,25 @@ An intelligent client-server FinTech platform designed specifically for transpor
 
 1. Clone the repository and navigate to the `backend` directory.
 2. Create a virtual environment and install dependencies:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-```
-
-
-
-```
-3. Configure your PostgreSQL database and add the connection string.
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. Configure your PostgreSQL database and add the connection string (see Database Setup below).
 4. Run the Flask development server:
    ```bash
-python app.py
+   python app.py
+   ```
 
-```
 ### Database Setup
+
 1. Ensure PostgreSQL is installed and running.
 2. Create a new database named `logistics_db`.
 3. Initialize the tables using the provided schema file:
    ```bash
    psql -U postgres -d logistics_db -a -f database/schema.sql
-```
+   ```
 4. Update the database connection credentials in your Python and C++ configuration files.
 
 ### Frontend Setup

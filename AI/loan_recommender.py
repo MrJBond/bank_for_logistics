@@ -192,7 +192,7 @@ def load_fuzzy_rules_from_db():
     loan_rules = []
 
     try:
-        conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+        conn = psycopg2.connect(dbname="Bank", user="postgres", password=os.environ.get("DB_PASSWORD"))
         cursor = conn.cursor()
 
         # Fetch all rules
@@ -681,7 +681,7 @@ def plan_route():
     geometry = route_data['features'][0]['geometry']
 
     # 4. Save to PostgreSQL
-    conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+    conn = psycopg2.connect(dbname="Bank", user="postgres", password=os.environ.get("DB_PASSWORD"))
     cursor = conn.cursor()
 
     cursor.execute("""

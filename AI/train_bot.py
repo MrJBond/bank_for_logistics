@@ -15,7 +15,7 @@ def train_chatbot():
 
     # 1. Connect to the database
     try:
-        conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+        conn = psycopg2.connect(dbname="Bank", user="postgres", password=os.environ.get("DB_PASSWORD"))
         cursor = conn.cursor()
     except Exception as e:
         print(f"Database connection failed: {e}")

@@ -11,7 +11,7 @@ from sklearn.pipeline import make_pipeline
 
 def retrain_categorizer():
     print("Connecting to PostgreSQL...")
-    conn = psycopg2.connect(dbname="Bank", user="postgres", password="qwerty")
+    conn = psycopg2.connect(dbname="Bank", user="postgres", password=os.environ.get("DB_PASSWORD"))
     cursor = conn.cursor()
 
     print("Fetching training data...")

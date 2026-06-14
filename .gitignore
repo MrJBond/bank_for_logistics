@@ -8,3 +8,4 @@ reportsFiles/test.pdf
 
 # Generated machine learning models
 *.joblib
+.env

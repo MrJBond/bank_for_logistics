@@ -20,9 +20,15 @@ import psycopg2
 import psycopg2.extras
 import requests
 from shapely.geometry import Point, LineString
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Get a free API key from openrouteservice.org
-ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjFlZDcxY2NlNzc4MjQ3Y2M4YzZlMDAzZTY5NWE4YzQ1IiwiaCI6Im11cm11cjY0In0="
+ORS_API_KEY = os.environ.get("ORS_API_KEY")
+
+if not ORS_API_KEY:
+    print("WARNING: ORS_API_KEY is missing in .env file!", flush=True)
 
 def geocode_address(address_text):
     """Converts a text address into [longitude, latitude]"""

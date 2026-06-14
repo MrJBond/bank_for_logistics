@@ -5,7 +5,7 @@ DbConnector::DbConnector() {
     db.setHostName("localhost");
     db.setDatabaseName("Bank");
     db.setUserName("bank_app_user");
-    db.setPassword("qwerty");
+    db.setPassword(qgetenv("DB_PASSWORD"));
     db.setPort(5432);
     if (!db.open()) {
         qCritical() << "Database connection failed:" << db.lastError().text();

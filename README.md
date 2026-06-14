@@ -78,6 +78,14 @@ pip install -r requirements.txt
 python app.py
 
 ```
+### Database Setup
+1. Ensure PostgreSQL is installed and running.
+2. Create a new database named `logistics_db`.
+3. Initialize the tables using the provided schema file:
+   ```bash
+   psql -U postgres -d logistics_db -a -f database/schema.sql
+```
+4. Update the database connection credentials in your Python and C++ configuration files.
 
 ### Frontend Setup
 

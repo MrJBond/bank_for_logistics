@@ -20,7 +20,7 @@ An intelligent client-server FinTech platform designed specifically for transpor
 
 ### Frontend (C++ Client)
 
-* **C++ 17 & Qt 6:** High-performance, cross-platform desktop application with a High Contrast Dark Theme optimized for driving conditions.
+* **C++ 20 & Qt 6:** High-performance, cross-platform desktop application with a High Contrast Dark Theme optimized for driving conditions.
 * **Qt Modules:** `QtWidgets` (UI), `QNetworkAccessManager` (Asynchronous REST API calls), `QWebEngine` (Embedded Chromium for maps).
 * **OpenCV:** Low-level webcam capture and frame conversion (BGR to RGB).
 * **Leaflet.js:** Interactive GeoJSON route rendering.
@@ -87,7 +87,8 @@ An intelligent client-server FinTech platform designed specifically for transpor
 
 1. Open the project file in Qt Creator.
 2. Ensure the OpenCV include paths and libraries are correctly configured in your build system (`.pro` or `CMakeLists.txt`).
-3. Build and run the C++ application.
+3. Set the OPENCV_DIR environment variable in your system or Qt Creator to point to your local OpenCV installation folder.
+4. Build and run the C++ application.
 
 ---
 

@@ -2,6 +2,8 @@
 
 An intelligent client-server FinTech platform designed specifically for transportation and logistics centers. This system bridges the "information gap" between traditional banking and logistics telematics by integrating computer vision, natural language processing (NLP), spatial geofencing, and neuro-fuzzy models.
 
+[![Watch the Demo](https://img.shields.io/badge/YouTube-Watch_Project_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/CYBc1U7BpWY?si=mB_rW6LsMf9oKlCm)
+
 ---
 
 ## 🌟 Key Features
